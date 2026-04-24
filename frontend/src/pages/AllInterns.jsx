@@ -19,11 +19,22 @@ const AllInterns = () => {
     setLoading(true);
     setDataError(null);
     try {
-      const data = await apiCall("/admin/all-interns");
-      setInterns(Array.isArray(data) ? data : []);
+      const res = await apiCall("/admin/all-interns");
+      console.log("Interns API response:", res);
+
+      const internsData =
+        res?.data?.data ||
+        res?.data?.interns ||
+        res?.data?.users ||
+        res?.data ||
+        res ||
+        [];
+
+      setInterns(Array.isArray(internsData) ? internsData : []);
     } catch (error) {
       console.error("Failed to fetch interns:", error);
       setDataError("Unable to connect to server. Please ensure the backend is running and your MongoDB IP is whitelisted.");
+      setInterns([]);
     } finally {
       setLoading(false);
     }

@@ -13,6 +13,13 @@ const InternDashboard = () => {
     const fetchStats = async () => {
       setIsLoading(true);
       try {
+        const storedUserStr = localStorage.getItem("user");
+        const storedUser = storedUserStr ? JSON.parse(storedUserStr) : null;
+        if (storedUser?.role === 'admin') {
+           setError("Admin accounts do not have intern performance data.");
+           return;
+        }
+
         const response = await apiCall("/quiz/stats");
         if (response && response.success) {
           setInternStats(response.data);

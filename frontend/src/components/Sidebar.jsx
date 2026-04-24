@@ -26,6 +26,12 @@ const Sidebar = ({ isOpen, onClose }) => {
     { name: "Upload Interns", path: "/upload-interns" },
   ];
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/login");
+  };
+
   return (
     <>
       {/* Backdrop for mobile */}
@@ -37,7 +43,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       )}
 
       {/* Sidebar - responsive transform */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-900 shadow-2xl border-r border-slate-200 dark:border-slate-800 transform transition-transform duration-300 ease-in-out md:relative md:z-0 md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className={`flex flex-col h-screen fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-900 shadow-2xl border-r border-slate-200 dark:border-slate-800 transform transition-transform duration-300 ease-in-out md:relative md:z-0 md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         {/* TOP */}
         <div className="flex-1 flex flex-col">
           {/* Logo & Close */}
@@ -92,8 +98,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                   onClick={() => { navigate(item.path); onClose(); }}
                   className={`w-full text-left px-4 py-3 rounded-xl transition-all font-medium mb-1 ${
                     location.pathname === item.path
-                      ? "bg-amber-500 text-white shadow-lg"
-                      : "hover:bg-amber-50 dark:hover:bg-amber-900/30 hover:text-amber-700 dark:hover:text-amber-400 text-amber-600 dark:text-amber-500 border border-transparent hover:border-amber-200/50 dark:hover:border-amber-700/50"
+                      ? "bg-sky-500 text-white shadow-lg"
+                      : "text-slate-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-sky-900/30 hover:text-sky-600 dark:hover:text-sky-400 hover:shadow-md"
                   }`}
                 >
                   {item.name}
@@ -102,7 +108,18 @@ const Sidebar = ({ isOpen, onClose }) => {
           </nav>
         </div>
 
-
+        {/* BOTTOM / LOGOUT */}
+        <div className="mt-auto px-4 py-4 border-t border-slate-100 dark:border-slate-800">
+          <button
+            onClick={handleLogout}
+            className="flex items-center w-full gap-3 px-4 py-3 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-700 dark:hover:text-red-400 rounded-xl transition-all font-medium"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+            </svg>
+            Logout
+          </button>
+        </div>
       </div>
     </>
   );

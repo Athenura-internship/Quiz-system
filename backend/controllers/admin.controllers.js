@@ -31,14 +31,16 @@ export const uploadInterns = async (req, res) => {
       updateOne: {
         filter: { uniqueId: row.uniqueId },
         update: {
-          $setOnInsert: {
-            uniqueId: row.uniqueId,
+          $set: {
             name: row.name,
             email: row.email,
-            mobile: row.mobile || row.phone || row.contact || "N/A",
+            mobile: String(row.mobile || row.phoneNumber || row.phone || row.contact || "N/A"),
             domain: row.domain ? row.domain.trim().toUpperCase() : "GENERAL",
-            joiningDate: new Date(row.joiningDate),
             status: row.status || "Active",
+            ...(row.joiningDate && { joiningDate: new Date(row.joiningDate) })
+          },
+          $setOnInsert: {
+            uniqueId: row.uniqueId,
           },
         },
         upsert: true,
@@ -240,6 +242,7 @@ export const updateInternStatus = async (req, res) => {
 
 export const singleIntern = async (req, res) => {
   try {
+    console.log("Request body during create/register single intern:", req.body);
     const { uniqueId, name, email, mobile, domain, joiningDate } = req.body;
 
     if (!uniqueId || !name || !email || !mobile || !domain || !joiningDate) {

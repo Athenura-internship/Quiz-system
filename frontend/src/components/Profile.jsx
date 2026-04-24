@@ -18,25 +18,47 @@ const ProfilePage = () => {
                 const userStr = localStorage.getItem("user");
                 const storedUser = userStr ? JSON.parse(userStr) : null;
                 
+                // If user is Admin, they don't have intern stats, so skip fetching
+                if (storedUser?.role === 'admin') {
+                    setUser(storedUser);
+                    setLoading(false);
+                    return;
+                }
+
                 // 2. Fetch real-time stats from backend
                 const statsResponse = await apiCall("/quiz/stats");
                 
                 if (statsResponse && statsResponse.success) {
-                    console.log("Profile API Response Data:", statsResponse.data);
-                    setStats(statsResponse.data);
+                    const internData = statsResponse.data || {};
+                    console.log("Intern profile API response:", internData);
+                    setStats(internData);
+
+                    const phoneNumber = 
+                        internData?.phoneNumber || internData?.phone || internData?.mobile || internData?.mobileNumber || internData?.contact || internData?.contactNumber ||
+                        internData?.user?.phoneNumber || internData?.user?.phone || internData?.user?.mobile || internData?.user?.mobileNumber ||
+                        internData?.intern?.phoneNumber || internData?.intern?.phone || internData?.intern?.mobile || internData?.intern?.mobileNumber ||
+                        storedUser?.phoneNumber || storedUser?.phone || storedUser?.mobile || storedUser?.mobileNumber || storedUser?.contact || storedUser?.contactNumber || "N/A";
+                        
+                    const joiningDateRaw = 
+                        internData.joiningDate || internData.joining_date || internData.registrationDate || internData.createdAt ||
+                        storedUser?.joiningDate || storedUser?.joining_date || storedUser?.createdAt || null;
+
+                    console.log("Mapped phone number:", phoneNumber);
+                    console.log("Mapped joining date:", joiningDateRaw);
+
                     // Update user state with merged info from backend API
                     setUser({
                         ...storedUser,
-                        uniqueId: statsResponse.data.uniqueId || storedUser?.uniqueId || storedUser?.id,
-                        fullName: statsResponse.data.name || storedUser?.userName || "Intern",
-                        email: statsResponse.data.email || storedUser?.email,
-                        mobile: statsResponse.data.mobile || storedUser?.mobile,
-                        role: statsResponse.data.role || storedUser?.role,
-                        domain: statsResponse.data.domain || storedUser?.domain,
-                        badgesEarned: statsResponse.data.badgesEarned,
-                        totalScore: statsResponse.data.totalScore,
-                        status: statsResponse.data.status || storedUser?.status,
-                        joiningDate: statsResponse.data.joiningDate || storedUser?.joiningDate
+                        uniqueId: internData.uniqueId || storedUser?.uniqueId || storedUser?.id,
+                        fullName: internData.name || storedUser?.userName || "Intern",
+                        email: internData.email || storedUser?.email,
+                        mobile: phoneNumber,
+                        role: internData.role || storedUser?.role,
+                        domain: internData.domain || storedUser?.domain,
+                        badgesEarned: internData.badgesEarned,
+                        totalScore: internData.totalScore,
+                        status: internData.status || storedUser?.status,
+                        joiningDate: joiningDateRaw
                     });
                 } else {
                     setUser(storedUser);
@@ -176,7 +198,7 @@ const ProfilePage = () => {
                                 <div className="space-y-2">
                                     <label className="text-[10px] uppercase font-black text-slate-400 tracking-widest ml-1">Phone Number</label>
                                     <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-slate-800 dark:text-slate-100 font-bold shadow-sm">
-                                        {user.mobile || "N/A"}
+                                        {user.mobile || user.phone || user.phoneNumber || user.contactNumber || "N/A"}
                                     </div>
                                 </div>
                             </div>
@@ -203,8 +225,12 @@ const ProfilePage = () => {
                                     <label className="text-[10px] uppercase font-black text-slate-400 tracking-widest ml-1">Joining Date</label>
                                     <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-slate-800 dark:text-slate-100 font-bold shadow-sm">
                                         {(() => {
-                                            if (!user.joiningDate) return "N/A";
-                                            const d = new Date(user.joiningDate);
+                                            const jDate = user.joiningDate || user.joining_date || user.registrationDate || user.createdAt;
+                                            if (!jDate) return "N/A";
+                                            if (typeof jDate === "string" && jDate.includes("-") && jDate.length <= 10) {
+                                                return jDate;
+                                            }
+                                            const d = new Date(jDate);
                                             if (isNaN(d.getTime())) return "N/A";
                                             const day = String(d.getDate()).padStart(2, '0');
                                             const month = String(d.getMonth() + 1).padStart(2, '0');

@@ -233,13 +233,11 @@ export const getInternStats = async (req, res) => {
     const domainRanked = rankedInterns.filter(i => (i.domain || '').trim().toUpperCase() === userDomainNormalized);
     const domainRank = domainRanked.findIndex(i => i.uniqueId === internUniqueId) + 1;
 
-    res.status(200).json({
-      success: true,
-      data: {
+    const responseData = {
         uniqueId: user.uniqueId,
         name: user.name,
         email: user.email,
-        mobile: user.mobile,
+        mobile: user.mobile || null, // Ensure stringification doesn't drop the key
         role: user.role,
         domain: user.domain,
         overallRank: overallRank || "N/A",
@@ -251,7 +249,13 @@ export const getInternStats = async (req, res) => {
         badgesEarned: user.badgesEarned,
         status: user.status,
         joiningDate: user.joiningDate
-      }
+    };
+
+    console.log("Backend profile API response object:", responseData);
+
+    res.status(200).json({
+      success: true,
+      data: responseData
     });
 
   } catch (error) {
