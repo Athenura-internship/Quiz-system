@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { apiCall } from '../utils/api';
 
 const AllInterns = () => {
@@ -10,6 +10,11 @@ const AllInterns = () => {
   const [interns, setInterns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dataError, setDataError] = useState(null);
+
+  // Edit Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingIntern, setEditingIntern] = useState(null);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   useEffect(() => {
     fetchInterns();
@@ -40,9 +45,43 @@ const AllInterns = () => {
     }
   };
 
-  const handleDelete = (id) => {
-    if(window.confirm('Are you sure you want to delete this intern?')) {
-      setInterns(interns.filter(i => i.uniqueId !== id));
+  const handleDelete = async (id) => {
+    if(window.confirm('Are you sure you want to permanently delete this intern?')) {
+      try {
+        await apiCall(`/admin/delete-intern?uniqueId=${encodeURIComponent(id)}`, {
+          method: "DELETE"
+        });
+        setInterns(interns.filter(i => i.uniqueId !== id));
+      } catch (error) {
+        alert(error.message || 'Failed to delete intern');
+      }
+    }
+  };
+
+  const handleEdit = (intern) => {
+    setEditingIntern({ ...intern, joiningDate: new Date(intern.joiningDate).toISOString().split('T')[0] });
+    setIsEditModalOpen(true);
+  };
+
+  const saveEdit = async (e) => {
+    e.preventDefault();
+    setIsSavingEdit(true);
+    try {
+      await apiCall(`/admin/update-intern`, {
+        method: "PUT",
+        body: JSON.stringify(editingIntern)
+      });
+      
+      // Update local state
+      setInterns(interns.map(intern => 
+        intern.uniqueId === editingIntern.uniqueId ? { ...editingIntern } : intern
+      ));
+      setIsEditModalOpen(false);
+      setEditingIntern(null);
+    } catch (error) {
+      alert(error.message || 'Failed to update intern');
+    } finally {
+      setIsSavingEdit(false);
     }
   };
 
@@ -230,6 +269,7 @@ const AllInterns = () => {
                     <button 
                       className="p-2.5 rounded-xl text-slate-400 hover:text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-all"
                       title="Edit"
+                      onClick={() => handleEdit(intern)}
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -348,6 +388,7 @@ const AllInterns = () => {
                                <button 
                                  className="p-2 rounded-lg text-slate-400 hover:text-sky-600 border border-transparent hover:border-sky-200 hover:bg-sky-50 dark:hover:border-sky-800 dark:hover:bg-sky-900/30 transition-all"
                                  title="View/Edit"
+                                 onClick={() => handleEdit(intern)}
                                >
                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -386,9 +427,128 @@ const AllInterns = () => {
               </div>
             )}
         </div>
-      </motion.div>
-    </div>
-  );
-};
+       </motion.div>
+
+       {/* Edit Modal */}
+       <AnimatePresence>
+         {isEditModalOpen && (
+           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+             <motion.div
+               initial={{ opacity: 0, scale: 0.9, y: 20 }}
+               animate={{ opacity: 1, scale: 1, y: 0 }}
+               exit={{ opacity: 0, scale: 0.9, y: 20 }}
+               className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700"
+             >
+               <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+                 <div>
+                   <h2 className="text-xl font-bold text-slate-800 dark:text-white">Edit Intern Details</h2>
+                   <p className="text-sm text-slate-500 dark:text-slate-400">ID: {editingIntern?.uniqueId}</p>
+                 </div>
+                 <button 
+                   onClick={() => setIsEditModalOpen(false)}
+                   className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors"
+                 >
+                   <svg className="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                   </svg>
+                 </button>
+               </div>
+
+               <form onSubmit={saveEdit} className="p-8 space-y-6">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   <div>
+                     <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Full Name</label>
+                     <input 
+                       type="text" 
+                       required
+                       value={editingIntern?.name || ''}
+                       onChange={(e) => setEditingIntern({...editingIntern, name: e.target.value})}
+                       className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-sky-500 outline-none dark:text-white"
+                     />
+                   </div>
+                   <div>
+                     <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Email Address</label>
+                     <input 
+                       type="email" 
+                       required
+                       value={editingIntern?.email || ''}
+                       onChange={(e) => setEditingIntern({...editingIntern, email: e.target.value})}
+                       className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-sky-500 outline-none dark:text-white"
+                     />
+                   </div>
+                   <div>
+                     <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Mobile Number</label>
+                     <input 
+                       type="tel" 
+                       required
+                       value={editingIntern?.mobile || ''}
+                       onChange={(e) => setEditingIntern({...editingIntern, mobile: e.target.value})}
+                       className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-sky-500 outline-none dark:text-white"
+                     />
+                   </div>
+                   <div>
+                     <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Domain</label>
+                     <select 
+                       value={editingIntern?.domain || ''}
+                       onChange={(e) => setEditingIntern({...editingIntern, domain: e.target.value})}
+                       className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-sky-500 outline-none dark:text-white"
+                     >
+                       <option value="DATA SCIENCE & ANALYTICS">DATA SCIENCE & ANALYTICS</option>
+                       <option value="HUMAN RESOURCES">HUMAN RESOURCES</option>
+                       <option value="APPLICATION DEVELOPMENT">APPLICATION DEVELOPMENT</option>
+                       <option value="SOCIAL MEDIA MANAGEMENT">SOCIAL MEDIA MANAGEMENT</option>
+                       <option value="GRAPHIC DESIGN">GRAPHIC DESIGN</option>
+                       <option value="DIGITAL MARKETING">DIGITAL MARKETING</option>
+                       <option value="VIDEO EDITING">VIDEO EDITING</option>
+                       <option value="FULL STACK DEVELOPMENT">FULL STACK DEVELOPMENT</option>
+                       <option value="MERN STACK DEVELOPMENT">MERN STACK DEVELOPMENT</option>
+                       <option value="CONTENT WRITING">CONTENT WRITING</option>
+                       <option value="CONTENT CREATOR">CONTENT CREATOR</option>
+                       <option value="UI/UX DESIGNING">UI/UX DESIGNING</option>
+                       <option value="FRONT-END DEVELOPER">FRONT-END DEVELOPER</option>
+                       <option value="BACK-END DEVELOPER">BACK-END DEVELOPER</option>
+                     </select>
+                   </div>
+                   <div className="md:col-span-2">
+                     <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Joining Date</label>
+                     <input 
+                       type="date" 
+                       required
+                       value={editingIntern?.joiningDate || ''}
+                       onChange={(e) => setEditingIntern({...editingIntern, joiningDate: e.target.value})}
+                       className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-sky-500 outline-none dark:text-white"
+                     />
+                   </div>
+                 </div>
+
+                 <div className="flex justify-end gap-4 pt-6 border-t border-slate-100 dark:border-slate-800">
+                   <button 
+                     type="button"
+                     onClick={() => setIsEditModalOpen(false)}
+                     className="px-6 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-200 transition-all"
+                   >
+                     Cancel
+                   </button>
+                   <button 
+                     type="submit"
+                     disabled={isSavingEdit}
+                     className="px-8 py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-xl font-bold shadow-lg shadow-sky-200 dark:shadow-none transition-all disabled:opacity-50 flex items-center gap-2"
+                   >
+                     {isSavingEdit ? (
+                       <>
+                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                         Saving...
+                       </>
+                     ) : 'Save Changes'}
+                   </button>
+                 </div>
+               </form>
+             </motion.div>
+           </div>
+         )}
+       </AnimatePresence>
+     </div>
+   );
+ };
 
 export default AllInterns;

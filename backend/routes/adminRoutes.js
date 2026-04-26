@@ -11,6 +11,8 @@ import {
   getAllContests,
   getAllAttempts,
   deleteContest,
+  deleteIntern,
+  updateIntern,
 } from "../controllers/admin.controllers.js";
 
 import { protectRoute } from "../middlewares/authMiddleware.js";
@@ -42,5 +44,9 @@ router.put("/replace-question/:id", replaceQuestion);
 
 // 🗑️ Delete Contest
 router.delete("/delete-contest/:id", deleteContest);
+
+// 👤 Intern Management (Delete & Update)
+router.delete("/delete-intern", deleteIntern);
+router.put("/update-intern", updateIntern);
 
 export default router;

@@ -51,13 +51,13 @@ const ReviewQuestion = () => {
   const handleReplaceQuestion = async (questionId) => {
     setReplacingId(questionId);
     try {
-      const response = await apiCall('/questions/random');
+      const response = await apiCall(`/admin/replace-question/${questionId}`, { method: 'PUT' });
       let newQuestion;
       
       if (response && response.success && response.data) {
         const q = response.data;
         newQuestion = {
-          id: q._id || `new_${Date.now()}`,
+          id: q._id || questionId,
           text: q.questionText,
           options: q.options,
           correct: q.correctAnswer

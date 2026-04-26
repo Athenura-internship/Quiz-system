@@ -30,7 +30,7 @@ export default function DomainReport() {
     setLoading(true);
     setUseBackup(false);
     try {
-      const result = await apiCall(`/leaderboard/domain/${domain}`);
+      const result = await apiCall(`/leaderboard/domain/${encodeURIComponent(domain)}`);
       
       if (result.success && result.data && result.data.length > 0) {
         setData(result.data);

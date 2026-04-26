@@ -9,53 +9,81 @@ import xlsx from "xlsx";
 import "dotenv/config";
 import { createContestID } from "../utils/createContestID.js";
 
+// Helper to find value in row by case-insensitive key search and common variations
+const getRowValue = (row, keys) => {
+  const rowKeys = Object.keys(row);
+  for (const k of keys) {
+    const match = rowKeys.find(rk => rk.toLowerCase().replace(/[\s_]/g, '') === k.toLowerCase().replace(/[\s_]/g, ''));
+    if (match) return row[match];
+  }
+  return null;
+};
+
 export const uploadInterns = async (req, res) => {
   try {
-    // req.file is provided by multer (file upload middleware)
     if (!req.file) {
       return res.status(400).json({ message: "❌ No file uploaded." });
     }
 
-    // Read the uploaded Excel file from memory
     const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
-    const sheetName = workbook.SheetNames[0]; // first sheet
+    const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
-    const rows = xlsx.utils.sheet_to_json(sheet); // convert to array of objects
+    const rows = xlsx.utils.sheet_to_json(sheet);
 
     if (rows.length === 0) {
-      return res.status(400).json({ message: "❌ Excel file is empty." });
+      return res.status(400).json({ message: "❌ Excel file is empty or invalid format." });
     }
 
-    // Prepare operations for bulk insertion
-    const operations = rows.map((row) => ({
-      updateOne: {
-        filter: { uniqueId: row.uniqueId },
-        update: {
-          $set: {
-            name: row.name,
-            email: row.email,
-            mobile: String(row.mobile || row.phoneNumber || row.phone || row.contact || "N/A"),
-            domain: row.domain ? row.domain.trim().toUpperCase() : "GENERAL",
-            status: row.status || "Active",
-            ...(row.joiningDate && { joiningDate: new Date(row.joiningDate) })
-          },
-          $setOnInsert: {
-            uniqueId: row.uniqueId,
-          },
-        },
-        upsert: true,
-      },
-    }));
+    const operations = rows.map((row) => {
+      const uniqueId = getRowValue(row, ['uniqueid', 'id', 'internid']);
+      const name = getRowValue(row, ['name', 'fullname', 'internname']);
+      const email = getRowValue(row, ['email', 'emailaddress', 'mail']);
+      const mobile = String(getRowValue(row, ['mobile', 'phone', 'contact', 'phonenumber']) || 'N/A');
+      const domain = getRowValue(row, ['domain', 'track', 'department']);
+      const status = getRowValue(row, ['status', 'state']) || 'Active';
+      const joiningDate = getRowValue(row, ['joiningdate', 'date', 'joinedon']);
 
-    // Execute bulkWrite
+      if (!uniqueId || !name || !email) {
+        // Skip invalid rows or rows without mandatory fields
+        return null;
+      }
+
+      return {
+        updateOne: {
+          filter: { uniqueId },
+          update: {
+            $set: {
+              name,
+              email,
+              mobile,
+              domain: domain ? domain.trim().toUpperCase() : "GENERAL",
+              status: status.charAt(0).toUpperCase() + status.slice(1).toLowerCase(), // Normalize to "Active"/"Inactive"
+              ...(joiningDate && { joiningDate: new Date(joiningDate) })
+            },
+            $setOnInsert: { uniqueId },
+          },
+          upsert: true,
+        },
+      };
+    }).filter(op => op !== null);
+
+    if (operations.length === 0) {
+      return res.status(400).json({ message: "❌ No valid data found in file. Ensure headers like 'uniqueId', 'name', and 'email' exist." });
+    }
+
     const result = await Intern.bulkWrite(operations);
+    
     const added = result.upsertedCount;
-    const skipped = rows.length - added;
+    const updated = result.modifiedCount;
+    const matched = result.matchedCount - updated; // Matched but not changed
 
     res.json({
-      message: `✅ Upload complete. Added: ${added}, Skipped (duplicates): ${skipped}`,
+      success: true,
+      message: `✅ Upload complete. Added: ${added}, Updated: ${updated}, Unchanged: ${matched}`,
+      details: { added, updated, matched, total: operations.length }
     });
   } catch (error) {
+    console.error("Error in uploadInterns:", error);
     res.status(500).json({ message: "❌ Server error.", error: error.message });
   }
 };
@@ -417,6 +445,71 @@ export const deleteContest = async (req, res) => {
     console.error("Error in deleteContest:", error);
     res.status(500).json({
       message: "❌ Server error during contest deletion.",
+      error: error.message,
+    });
+  }
+};
+
+export const deleteIntern = async (req, res) => {
+  try {
+    const { uniqueId } = req.query;
+
+    if (!uniqueId) {
+      return res.status(400).json({ message: "❌ uniqueId is required in query." });
+    }
+
+    const deletedIntern = await Intern.findOneAndDelete({ uniqueId });
+    if (!deletedIntern) {
+      return res.status(404).json({ message: "❌ Intern not found." });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "✅ Intern deleted successfully.",
+    });
+  } catch (error) {
+    console.error("Error in deleteIntern:", error);
+    res.status(500).json({
+      message: "❌ Server error during intern deletion.",
+      error: error.message,
+    });
+  }
+};
+
+export const updateIntern = async (req, res) => {
+  try {
+    // For Update, uniqueId should be part of the body
+    const { uniqueId, name, email, mobile, domain, joiningDate } = req.body;
+
+    if (!uniqueId) {
+      return res.status(400).json({ message: "❌ uniqueId is required in body." });
+    }
+
+    const updatedIntern = await Intern.findOneAndUpdate(
+      { uniqueId },
+      {
+        name,
+        email,
+        mobile,
+        domain: domain ? domain.trim().toUpperCase() : undefined,
+        joiningDate: joiningDate ? new Date(joiningDate) : undefined,
+      },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedIntern) {
+      return res.status(404).json({ message: "❌ Intern not found." });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "✅ Intern updated successfully.",
+      data: updatedIntern,
+    });
+  } catch (error) {
+    console.error("Error in updateIntern:", error);
+    res.status(500).json({
+      message: "❌ Server error during intern update.",
       error: error.message,
     });
   }

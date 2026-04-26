@@ -97,6 +97,40 @@ function SubmitModal({ answers, totalQuestions, marked, onConfirm, onCancel }) {
   );
 }
 
+// ── Security Warning Modal ───────────────────────────────────────────────────
+function SecurityModal({ warnings, maxWarnings, onDismiss }) {
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+      <div className="bg-white rounded-3xl border-2 border-red-100 shadow-2xl w-full max-w-sm p-8 text-center animate-in zoom-in duration-300">
+        <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </div>
+        <h3 className="text-2xl font-black text-slate-900 mb-2" style={{ fontFamily: "'Outfit',sans-serif" }}>
+          Security Alert!
+        </h3>
+        <p className="text-slate-500 text-sm leading-relaxed mb-6">
+          Tab switching or leaving the quiz window is strictly prohibited. This is your <span className="font-bold text-red-600">warning {warnings} of {maxWarnings}</span>.
+        </p>
+        <div className="bg-red-50 rounded-2xl p-4 mb-8">
+          <p className="text-xs text-red-700 font-bold uppercase tracking-wider">
+            {warnings >= maxWarnings ? "Last warning! Next violation will auto-submit." : "Please stay on this page to continue."}
+          </p>
+        </div>
+        <button
+          onClick={onDismiss}
+          className="w-full h-12 rounded-2xl bg-slate-900 text-white font-bold hover:bg-slate-800 transition-all shadow-lg"
+        >
+          I Understand
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Main QuizPage ──────────────────────────────────────────────────────────────
 export default function QuizPage() {
   const navigate = useNavigate();
@@ -115,6 +149,10 @@ export default function QuizPage() {
   const [error, setError] = useState(null);
   const [scoreData, setScoreData] = useState(null);
   
+  const [warnings, setWarnings] = useState(0);
+  const [showSecurityModal, setShowSecurityModal] = useState(false);
+  const MAX_WARNINGS = 3;
+
   const startTimeRef = useRef(null);
   const [user, setUser] = useState(null);
 
@@ -163,6 +201,91 @@ export default function QuizPage() {
     }, 1000);
     return () => clearInterval(interval);
   }, [submitted, timeLeft]);
+
+  // ── Security Listeners ────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (submitted || loading) return;
+
+    const handleViolation = () => {
+      setWarnings(prev => {
+        const next = prev + 1;
+        if (next >= MAX_WARNINGS) {
+          confirmSubmit();
+          return next;
+        }
+        setShowSecurityModal(true);
+        return next;
+      });
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") handleViolation();
+    };
+
+    const handleBlur = () => handleViolation();
+
+    const preventDefault = (e) => e.preventDefault();
+
+    const handleKeydown = (e) => {
+      // Block F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U, Ctrl+C, Ctrl+V, Ctrl+S
+      const isDevTools = e.keyCode === 123 || (e.ctrlKey && e.shiftKey && [73, 74, 67].includes(e.keyCode));
+      const isCopyPaste = e.ctrlKey && [85, 67, 86, 83].includes(e.keyCode);
+      
+      if (isDevTools || isCopyPaste) {
+        e.preventDefault();
+        return false;
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("blur", handleBlur);
+    document.addEventListener("contextmenu", preventDefault);
+    document.addEventListener("copy", preventDefault);
+    document.addEventListener("paste", preventDefault);
+    document.addEventListener("keydown", handleKeydown);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("blur", handleBlur);
+      document.removeEventListener("contextmenu", preventDefault);
+      document.removeEventListener("copy", preventDefault);
+      document.removeEventListener("paste", preventDefault);
+      document.removeEventListener("keydown", handleKeydown);
+    };
+  }, [submitted, loading]);
+
+  // ── Fullscreen Enforcement ───────────────────────────────────────────────────
+  useEffect(() => {
+    if (!loading && !submitted && questions.length > 0) {
+      const enterFS = async () => {
+        try {
+          if (!document.fullscreenElement) {
+            await document.documentElement.requestFullscreen();
+          }
+        } catch (err) {
+          console.warn("Fullscreen request failed", err);
+        }
+      };
+      enterFS();
+    }
+    
+    const handleFSChange = () => {
+      if (!document.fullscreenElement && !submitted && !loading) {
+        setWarnings(prev => {
+          const next = prev + 1;
+          if (next >= MAX_WARNINGS) {
+            confirmSubmit();
+            return next;
+          }
+          setShowSecurityModal(true);
+          return next;
+        });
+      }
+    };
+
+    document.addEventListener("fullscreenchange", handleFSChange);
+    return () => document.removeEventListener("fullscreenchange", handleFSChange);
+  }, [loading, submitted, questions.length]);
 
   // ── Select answer ────────────────────────────────────────────────────────────
   const selectAnswer = (optIndex) => {
@@ -216,6 +339,11 @@ export default function QuizPage() {
         });
         setSubmitted(true);
         setShowModal(false);
+        setShowSecurityModal(false);
+        // Exit Fullscreen on completion
+        if (document.fullscreenElement) {
+          document.exitFullscreen();
+        }
       }
     } catch (err) {
       alert("Submission failed: " + err.message);
@@ -280,6 +408,14 @@ export default function QuizPage() {
           marked={marked}
           onConfirm={confirmSubmit}
           onCancel={() => setShowModal(false)}
+        />
+      )}
+
+      {showSecurityModal && (
+        <SecurityModal
+          warnings={warnings}
+          maxWarnings={MAX_WARNINGS}
+          onDismiss={() => setShowSecurityModal(false)}
         />
       )}
 
@@ -432,15 +568,17 @@ export default function QuizPage() {
                 Prev
               </button>
 
-              <button
-                onClick={() => setShowModal(true)}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-900 text-white text-sm font-bold hover:bg-sky-800 transition-all"
-              >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M2.5 7.5L5.5 10.5L11.5 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                Submit Quiz
-              </button>
+              {current === TOTAL - 1 && (
+                <button
+                  onClick={() => setShowModal(true)}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-900 text-white text-sm font-bold hover:bg-sky-800 transition-all"
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M2.5 7.5L5.5 10.5L11.5 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  Submit Quiz
+                </button>
+              )}
 
               {current < TOTAL - 1 ? (
                 <button

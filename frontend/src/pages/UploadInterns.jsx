@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiCall } from '../utils/api';
+import * as XLSX from 'xlsx';
 
 const UploadInterns = () => {
   const [activeView, setActiveView] = useState('options'); // 'options', 'bulk', 'single'
@@ -32,20 +33,57 @@ const UploadInterns = () => {
   const processFile = (selectedFile) => {
     if (!selectedFile) return;
     const validTypes = ['text/csv', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
-    if (!validTypes.includes(selectedFile.type) && !selectedFile.name.endsWith('.csv') && !selectedFile.name.endsWith('.xlsx')) {
+    
+    // Check extension if MIME type is empty (common in some browsers/OS)
+    const fileName = selectedFile.name.toLowerCase();
+    const isExcelOrCsv = fileName.endsWith('.csv') || fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
+
+    if (!validTypes.includes(selectedFile.type) && !isExcelOrCsv) {
       alert("Invalid file type. Please upload a CSV or Excel file.");
       return;
     }
 
     setFile(selectedFile);
     setUploadStatus(null);
-    setTimeout(() => {
-      setParsedData([
-        { name: 'John Doe', email: 'john@example.com', mobile: '9876543210', domain: 'Frontend', uniqueId: 'ATHENURA/25/1101', joiningDate: '2025-01-15' },
-        { name: 'Jane Smith', email: 'jane@example.com', mobile: '9876543211', domain: 'Backend', uniqueId: 'ATHENURA/25/1102', joiningDate: '2025-01-15' },
-        { name: 'Michael Ray', email: 'michael@example.com', mobile: '9876543212', domain: 'Data Science', uniqueId: 'ATHENURA/25/1103', joiningDate: '2025-01-15' },
-      ]);
-    }, 600);
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+        
+        // Map common header variations to our expected format
+        const mappedData = jsonData.slice(0, 10).map(row => {
+          // Find value by case-insensitive key search
+          const findVal = (keys) => {
+            const rowKeys = Object.keys(row);
+            for (const k of keys) {
+              const match = rowKeys.find(rk => rk.toLowerCase().replace(/[\s_]/g, '') === k.toLowerCase().replace(/[\s_]/g, ''));
+              if (match) return row[match];
+            }
+            return '';
+          };
+
+          return {
+            name: findVal(['name', 'fullname', 'internname']),
+            email: findVal(['email', 'emailaddress', 'mail']),
+            mobile: String(findVal(['mobile', 'phone', 'contact', 'phonenumber']) || 'N/A'),
+            domain: findVal(['domain', 'track', 'department']),
+            uniqueId: findVal(['uniqueid', 'id', 'internid']),
+            joiningDate: findVal(['joiningdate', 'date', 'joinedon'])
+          };
+        });
+
+        setParsedData(mappedData);
+      } catch (error) {
+        console.error("Error parsing file:", error);
+        alert("Failed to parse file. Please check the format.");
+      }
+    };
+    reader.readAsArrayBuffer(selectedFile);
   };
 
   const handleDrop = (e) => {
@@ -71,13 +109,13 @@ const UploadInterns = () => {
       const formData = new FormData();
       formData.append("file", file);
 
-      await apiCall("/admin/upload-interns", {
+      const response = await apiCall("/admin/upload-interns", {
         method: "POST",
         body: formData,
         headers: {} // apiCall will handle Auth, but we shouldn't set Content-Type for FormData
       });
 
-      setUploadStatus('success');
+      setUploadStatus({ type: 'success', message: response.message });
       setFile(null);
       setParsedData([]);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -200,7 +238,7 @@ const UploadInterns = () => {
             </motion.div>
           )}
 
-          {activeView === 'bulk' && (
+           {activeView === 'bulk' && (
             <motion.div
               key="bulk"
               initial={{ opacity: 0, y: 10 }}
@@ -208,13 +246,13 @@ const UploadInterns = () => {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
             >
-              {uploadStatus === 'success' && (
+              {uploadStatus?.type === 'success' && (
                 <div className="mb-6 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 p-4 rounded-xl flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-800/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>
                     </div>
-                    <p className="text-emerald-800 dark:text-emerald-400 font-medium">Successfully imported interns!</p>
+                    <p className="text-emerald-800 dark:text-emerald-400 font-medium">{uploadStatus.message || 'Successfully imported interns!'}</p>
                   </div>
                   <button onClick={() => setUploadStatus(null)} className="text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 font-bold text-sm transition-colors">
                     Dismiss
