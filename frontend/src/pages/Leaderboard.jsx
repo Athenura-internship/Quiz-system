@@ -34,6 +34,7 @@ const AdminLeaderboard = () => {
     try {
       const result = await apiCall("/leaderboard/overall");
       if (result.success) {
+        console.log("Leaderboard API:", result.data);
         setLeaderboard(result.data);
       }
     } catch (error) {
@@ -43,10 +44,21 @@ const AdminLeaderboard = () => {
     }
   };
 
-  const filteredLeaderboard = leaderboard.filter(intern => 
-    intern.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    intern.uniqueId.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredLeaderboard = leaderboard.filter((item) => {
+    const searchText = (searchTerm || "").toLowerCase();
+
+    const name = (item.name || item.fullName || item.username || "").toLowerCase();
+    const uniqueId = (item.uniqueId || "").toLowerCase();
+    const email = (item.email || "").toLowerCase();
+    const domain = (item.domain || "").toLowerCase();
+
+    return (
+      name.includes(searchText) ||
+      uniqueId.includes(searchText) ||
+      email.includes(searchText) ||
+      domain.includes(searchText)
+    );
+  });
 
   const starPerformer = leaderboard.find(i => i.isInternOfTheMonth) || leaderboard[0];
 
@@ -112,7 +124,7 @@ const AdminLeaderboard = () => {
                 <div className="flex-1 text-center md:text-left">
                    <h4 className="text-amber-400 font-black text-xs uppercase tracking-widest mb-2">Platform Star Performer</h4>
                    <h2 className="text-4xl sm:text-5xl font-black text-white mb-4 tracking-tight leading-none">
-                      {starPerformer.name}
+                      {starPerformer.name || starPerformer.fullName || starPerformer.username || "Unknown"}
                    </h2>
                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
                       <div className="bg-white/5 border border-white/10 px-4 py-2 rounded-xl text-center">
@@ -121,7 +133,7 @@ const AdminLeaderboard = () => {
                       </div>
                       <div className="bg-white/5 border border-white/10 px-4 py-2 rounded-xl text-center">
                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-tight">Global Domain</p>
-                         <p className="text-xl font-black text-sky-400">{starPerformer.domain}</p>
+                         <p className="text-xl font-black text-sky-400">{starPerformer.domain || "N/A"}</p>
                       </div>
                    </div>
                 </div>
@@ -147,8 +159,8 @@ const AdminLeaderboard = () => {
                         #{i + 1}
                       </div>
                       <div className="flex-1 text-center md:text-left">
-                        <h3 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">{intern.name}</h3>
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{intern.uniqueId} • {intern.domain}</p>
+                        <h3 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">{intern.name || intern.fullName || intern.username || "Unknown"}</h3>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{intern.uniqueId || "N/A"} • {intern.domain || "N/A"}</p>
                       </div>
 
                       <div className="shrink-0 text-center min-w-[80px]">

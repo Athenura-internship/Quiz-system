@@ -35,7 +35,11 @@ const AllInterns = () => {
         res ||
         [];
 
-      setInterns(Array.isArray(internsData) ? internsData : []);
+      const data = Array.isArray(internsData) ? internsData : [];
+      if (data.length > 0) {
+        console.log("Sample intern object:", data[0]);
+      }
+      setInterns(data);
     } catch (error) {
       console.error("Failed to fetch interns:", error);
       setDataError("Unable to connect to server. Please ensure the backend is running and your MongoDB IP is whitelisted.");
@@ -115,12 +119,25 @@ const AllInterns = () => {
   const mobileCardsClass = "md:hidden grid grid-cols-1 gap-4 pb-8";
   const tableWrapperClass = "hidden md:block overflow-hidden";
 
-  const filteredInterns = interns.filter(intern => {
-    const matchesSearch = intern.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          intern.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          intern.uniqueId.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDomain = filterDomain === 'All' || intern.domain === filterDomain;
+  const filteredInterns = interns.filter((intern) => {
+    const searchText = searchTerm.toLowerCase();
+
+    const name = (intern.name || intern.fullName || intern.username || "").toLowerCase();
+    const email = (intern.email || "").toLowerCase();
+    const phone = (intern.phone || intern.phoneNumber || intern.mobile || "").toString().toLowerCase();
+    const domain = (intern.domain || "").toLowerCase();
+    const uniqueId = (intern.uniqueId || "").toLowerCase();
+
+    const matchesSearch = 
+      name.includes(searchText) ||
+      email.includes(searchText) ||
+      phone.includes(searchText) ||
+      domain.includes(searchText) ||
+      uniqueId.includes(searchText);
+
+    const matchesDomain = filterDomain === 'All' || (intern.domain || "") === filterDomain;
     const matchesStatus = filterStatus === 'All' || intern.status === filterStatus;
+    
     return matchesSearch && matchesDomain && matchesStatus;
   });
 
@@ -209,11 +226,11 @@ const AllInterns = () => {
                 {/* Header */}
                 <div className="flex items-start gap-4 mb-4 pb-4 border-b border-slate-200/50 dark:border-slate-700">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center text-white font-bold shadow-sm flex-shrink-0 mt-1">
-                    {intern.name.charAt(0)}
+                    {(intern.name || intern.fullName || intern.username || "?").charAt(0)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-lg text-slate-800 dark:text-slate-200 truncate">{intern.name}</h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{intern.email}</p>
+                    <h3 className="font-semibold text-lg text-slate-800 dark:text-slate-200 truncate">{intern.name || intern.fullName || intern.username || "Unknown"}</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{intern.email || "N/A"}</p>
                   </div>
                 </div>
 
@@ -222,25 +239,25 @@ const AllInterns = () => {
                   <div>
                     <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide block mb-1">Unique ID</span>
                     <span className="font-mono font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md text-xs block">
-                      {intern.uniqueId}
+                      {intern.uniqueId || "N/A"}
                     </span>
                   </div>
                   <div>
                     <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide block mb-1">Domain</span>
-                    <span className="font-medium text-slate-700 dark:text-slate-300">{intern.domain}</span>
+                    <span className="font-medium text-slate-700 dark:text-slate-300">{intern.domain || "N/A"}</span>
                   </div>
                   <div>
                     <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide block mb-1">Phone</span>
-                    <span className="text-slate-600 dark:text-slate-400 text-xs">{intern.mobile || 'N/A'}</span>
+                    <span className="text-slate-600 dark:text-slate-400 text-xs">{intern.phone || intern.phoneNumber || intern.mobile || "N/A"}</span>
                   </div>
                   <div>
                     <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide block mb-1">Join Date</span>
-                    <span className="text-slate-600 dark:text-slate-400">{new Date(intern.joiningDate).toLocaleDateString()}</span>
+                    <span className="text-slate-600 dark:text-slate-400">{intern.joiningDate || intern.createdAt || intern.date ? new Date(intern.joiningDate || intern.createdAt || intern.date).toLocaleDateString() : "N/A"}</span>
                   </div>
                   <div>
                     <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide block mb-1">Status</span>
                     <span className={`px-3 py-1 rounded-full text-xs font-bold ${intern.status === 'Active' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400' : 'bg-slate-100 text-slate-600 dark:bg-slate-800/50 dark:text-slate-400'}`}>
-                      {intern.status}
+                      {intern.status || "Unknown"}
                     </span>
                   </div>
                 </div>
@@ -347,22 +364,22 @@ const AllInterns = () => {
                           <td className="py-3 px-4 sm:px-6">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center text-white font-bold shadow-sm">
-                                {intern.name.charAt(0)}
+                                {(intern.name || intern.fullName || intern.username || "?").charAt(0)}
                               </div>
                               <div>
-                                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{intern.name}</p>
-                                <p className="text-xs text-slate-500 dark:text-slate-400">{intern.email}</p>
+                                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{intern.name || intern.fullName || intern.username || "Unknown"}</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">{intern.email || "N/A"}</p>
                               </div>
                             </div>
                           </td>
                           <td className="py-3 px-4 sm:px-6">
                             <span className="text-sm font-medium font-mono text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-md">
-                              {intern.uniqueId}
+                              {intern.uniqueId || "N/A"}
                             </span>
                           </td>
-                          <td className="py-3 px-4 sm:px-6 text-sm text-slate-600 dark:text-slate-400">{intern.mobile || 'N/A'}</td>
-                          <td className="py-3 px-4 sm:px-6 text-sm font-medium text-slate-700 dark:text-slate-300">{intern.domain}</td>
-                          <td className="py-3 px-4 sm:px-6 text-sm text-slate-600 dark:text-slate-400">{new Date(intern.joiningDate).toLocaleDateString()}</td>
+                          <td className="py-3 px-4 sm:px-6 text-sm text-slate-600 dark:text-slate-400">{intern.phone || intern.phoneNumber || intern.mobile || "N/A"}</td>
+                          <td className="py-3 px-4 sm:px-6 text-sm font-medium text-slate-700 dark:text-slate-300">{intern.domain || "N/A"}</td>
+                          <td className="py-3 px-4 sm:px-6 text-sm text-slate-600 dark:text-slate-400">{intern.joiningDate || intern.createdAt || intern.date ? new Date(intern.joiningDate || intern.createdAt || intern.date).toLocaleDateString() : "N/A"}</td>
                           <td className="py-3 px-4 sm:px-6">
                             <button 
                               onClick={() => toggleStatus(intern.uniqueId, intern.status)}
@@ -379,7 +396,7 @@ const AllInterns = () => {
                                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
                               ) : (
-                                intern.status.toUpperCase()
+                                (intern.status || "Unknown").toUpperCase()
                               )}
                             </button>
                           </td>
