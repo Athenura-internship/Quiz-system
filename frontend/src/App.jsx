@@ -32,6 +32,9 @@ import InternLeaderboard from './pages/InternLeaderboard';
 import QuizLeaderboard from './pages/QuizLeaderboard';
 
 
+import ProtectedRoute from './components/ProtectedRoute';
+import PublicRoute from './components/PublicRoute';
+
 function AppRoutes() {
   const navigate = useNavigate();
   return (
@@ -44,33 +47,39 @@ function AppRoutes() {
           <Route path='/rules' element={<Rules />} />
           <Route path='/terms' element={<Terms />} />
         </Route>
-        <Route path='/login' element={<LoginPage />} />
-        <Route path='/admin-login' element={<AdminLoginPage />} />
-        <Route path='/register' element={<Register />} />
 
-        <Route path='/quiz/:id' element={<QuizPage />} />
-        
-        <Route element={<MainLayout />} >
-          <Route path="/leaderboard" element={<Leaderboard />} />
-          <Route path="/intern-leaderboard" element={<InternLeaderboard />} />
-          <Route path="/reports" element={<DomainReport />} />
-          <Route path="/intern" element={<InternDashboard />} />
-          <Route path="/my-quizzes" element={<MyQuizzes />} />
-          <Route path="/upcoming" element={<UpcomingQuiz />} />
-          <Route path="/intern/profile" element={<ProfilePage />} />
-          <Route path="/quiz-leaderboard/:id" element={<QuizLeaderboard />} />
-          <Route path="/create-contest" element={<CreateContest />} />
-          <Route path="/contests" element={<AllContests />} />
-          <Route path="/review-question" element={<ReviewQuestion />} />
-          <Route path="/review-quiz" element={<ReviewQuiz />} />
-          <Route path="/all-interns" element={<AllInterns />} />
-          <Route path="/upload-interns" element={<UploadInterns />} />
-          {/* Admin Dashboard Aliases to prevent 404s */}
-          <Route path="/admin-dashboard" element={<DomainReport />} />
-          <Route path="/admin/interns" element={<AllInterns />} />
-          <Route path="/admin/contest-results/:id" element={<ContestResults />} />
-          <Route path="*" element={<NotFound />} />
+        <Route element={<PublicRoute />}>
+          <Route path='/login' element={<LoginPage />} />
+          <Route path='/admin-login' element={<AdminLoginPage />} />
+          <Route path='/register' element={<Register />} />
         </Route>
+
+        {/* Dashboard routes protected by token */}
+        <Route element={<ProtectedRoute />}>
+          <Route path='/quiz/:id' element={<QuizPage />} />
+          
+          <Route element={<MainLayout />} >
+            <Route path="/leaderboard" element={<Leaderboard />} />
+            <Route path="/intern-leaderboard" element={<InternLeaderboard />} />
+            <Route path="/reports" element={<DomainReport />} />
+            <Route path="/intern" element={<InternDashboard />} />
+            <Route path="/my-quizzes" element={<MyQuizzes />} />
+            <Route path="/upcoming" element={<UpcomingQuiz />} />
+            <Route path="/intern/profile" element={<ProfilePage />} />
+            <Route path="/quiz-leaderboard/:id" element={<QuizLeaderboard />} />
+            <Route path="/create-contest" element={<CreateContest />} />
+            <Route path="/contests" element={<AllContests />} />
+            <Route path="/review-question" element={<ReviewQuestion />} />
+            <Route path="/review-quiz" element={<ReviewQuiz />} />
+            <Route path="/all-interns" element={<AllInterns />} />
+            <Route path="/upload-interns" element={<UploadInterns />} />
+            {/* Admin Dashboard Aliases to prevent 404s */}
+            <Route path="/admin-dashboard" element={<DomainReport />} />
+            <Route path="/admin/interns" element={<AllInterns />} />
+            <Route path="/admin/contest-results/:id" element={<ContestResults />} />
+          </Route>
+        </Route>
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </div>
   );
