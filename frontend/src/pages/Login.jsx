@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API_URL = "http://localhost:5000/api/auth/login";
+const API_URL = "/api/auth/login";
 
 const Toast = ({ message, type }) => {
   if (!message) return null;
