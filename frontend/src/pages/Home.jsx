@@ -16,7 +16,7 @@ function StatsBar() {
     <div className="relative z-20 -mt-10 px-6 md:px-12 max-w-7xl mx-auto">
       <div className="bg-white border border-slate-200 rounded-2xl p-6 md:p-8 shadow-sm flex flex-col md:flex-row justify-around items-center gap-8">
         {stats.map((stat, i) => (
-          <div key={i} className="flex items-center gap-4 w-full md:w-auto justify-center">
+          <div key={i} className="flex items-center gap-4 w-64 mx-auto md:w-auto md:mx-0 justify-start">
             <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
               {stat.icon}
             </div>

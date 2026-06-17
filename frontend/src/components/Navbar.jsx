@@ -27,7 +27,7 @@ export default function Navbar() {
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 px-6 md:px-12
-        ${scrolled ? "py-3" : "py-6"}`}
+        ${scrolled ? "py-5" : "py-8"}`}
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between relative">
         
@@ -41,7 +41,7 @@ export default function Navbar() {
           <img 
             src={logo} 
             alt="Athenura Logo" 
-            className="h-8 md:h-9 w-auto object-contain transition-transform duration-500 group-hover:scale-105" 
+            className="h-10 md:h-11 w-auto object-contain transition-transform duration-500 group-hover:scale-105" 
           />
         </Link>
 
