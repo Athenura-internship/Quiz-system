@@ -128,11 +128,11 @@ export default function Register() {
 
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider flex items-center gap-2">
-                  System Secret
+                  Secret Key
                 </label>
                 <input
                   type="password" name="secretKey" value={formData.secretKey} onChange={handleChange}
-                  placeholder="Master Key"
+                  placeholder="Secret Key"
                   className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-slate-400"
                 />
               </div>
