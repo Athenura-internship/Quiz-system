@@ -1,6 +1,13 @@
 import mongoose from "mongoose";
 
+let isConnected = false;
+
 const connectDB = async () => {
+  if (isConnected) {
+    console.log("=> Using existing database connection");
+    return;
+  }
+
   try {
     const mongoUri = process.env.MONGO_URL || process.env.MONGO_URI;
 
@@ -10,12 +17,11 @@ const connectDB = async () => {
     }
 
     const conn = await mongoose.connect(mongoUri);
+    isConnected = conn.connections[0].readyState === 1;
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     console.error(`❌ MongoDB Connection Error: ${error.message}`);
-    if (error.message.includes("unauthorized") || error.message.includes("whitelist")) {
-      console.error("👉 Troubleshooting: Please ensure your current IP address is whitelisted in your MongoDB Atlas 'Network Access' settings.");
-    }
+    throw error;
   }
 };
 export default connectDB;

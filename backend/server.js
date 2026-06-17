@@ -22,7 +22,7 @@ import contactRoutes from "./routes/contactRoutes.js";
 import cookieParser from "cookie-parser";
 
 // Connect Database
-connectDB();
+await connectDB();
 
 const app = express();
 
