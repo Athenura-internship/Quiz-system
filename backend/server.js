@@ -31,11 +31,11 @@ app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
 
-app.use("/api/auth", authRouter);
-app.use("/api/admin", adminRoutes);
-app.use("/api/quiz", quizRoutes);
-app.use("/api/leaderboard", leaderboardRoutes);
-app.use("/api/contact", contactRoutes);
+app.use("/auth", authRouter);
+app.use("/admin", adminRoutes);
+app.use("/quiz", quizRoutes);
+app.use("/leaderboard", leaderboardRoutes);
+app.use("/contact", contactRoutes);
 
 // Handle 404
 app.use((req, res) => {
