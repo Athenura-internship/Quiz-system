@@ -43,6 +43,24 @@ export const uploadInterns = async (req, res) => {
       const status = getRowValue(row, ['status', 'state']) || 'Active';
       const joiningDate = getRowValue(row, ['joiningdate', 'date', 'joinedon']);
 
+      let parsedJoiningDate = null;
+      if (joiningDate) {
+        // Handle DD/MM/YYYY format from template or standard date strings
+        if (typeof joiningDate === "string" && joiningDate.includes('/')) {
+           const parts = joiningDate.split('/');
+           if (parts.length === 3) {
+             // Assuming DD/MM/YYYY
+             parsedJoiningDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+           }
+        }
+        if (!parsedJoiningDate || isNaN(parsedJoiningDate.getTime())) {
+           parsedJoiningDate = new Date(joiningDate);
+        }
+        if (isNaN(parsedJoiningDate.getTime())) {
+           parsedJoiningDate = null; // Prevent Invalid Date cast errors
+        }
+      }
+
       if (!uniqueId || !name || !email) {
         // Skip invalid rows or rows without mandatory fields
         return null;
@@ -58,7 +76,7 @@ export const uploadInterns = async (req, res) => {
               mobile,
               domain: domain ? domain.trim().toUpperCase() : "GENERAL",
               status: status.charAt(0).toUpperCase() + status.slice(1).toLowerCase(), // Normalize to "Active"/"Inactive"
-              ...(joiningDate && { joiningDate: new Date(joiningDate) })
+              ...(parsedJoiningDate && { joiningDate: parsedJoiningDate })
             },
             $setOnInsert: { uniqueId },
           },

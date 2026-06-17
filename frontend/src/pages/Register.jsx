@@ -1,22 +1,17 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { apiCall } from "../utils/api";
-
-const ShieldIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-    <path d="M11 2L4 6.5v5c0 4.6 3.1 8.9 7 10 3.9-1.1 7-5.4 7-10v-5L11 2z" fill="white" />
-    <path d="M8 11l2.2 2.2L14 8.5" stroke="#0EA5E9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
+import logo from "../assets/Athenura.png";
+import { User, Mail, Lock, Key, Eye, EyeOff, ArrowRight } from "lucide-react";
 
 const Toast = ({ message, type }) => {
   if (!message) return null;
-  const styles = type === "err"
-    ? "bg-red-50 text-red-700 border border-red-200"
-    : "bg-green-50 text-green-700 border border-green-200";
+  const isErr = type === "err";
   return (
-    <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold mb-3 ${styles} transition-all duration-300`}>
-      {type === "err" ? "⚠" : "✓"} {message}
+    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium mb-6 ${
+      isErr ? "bg-red-50 text-red-600 border border-red-200" : "bg-green-50 text-green-600 border border-green-200"
+    }`}>
+      {isErr ? "⚠" : "✓"} {message}
     </div>
   );
 };
@@ -52,7 +47,7 @@ export default function Register() {
         body: JSON.stringify(formData),
       });
 
-      setToast({ msg: "Registration successful! Redirecting...", type: "ok" });
+      setToast({ msg: "Account created successfully!", type: "ok" });
       setTimeout(() => navigate("/"), 2000);
     } catch (err) {
       setToast({ msg: err.message || "Registration failed.", type: "err" });
@@ -66,141 +61,101 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-sky-50 flex items-center justify-center p-3 sm:p-4 md:p-6">
-      <div className="flex flex-col md:flex-row w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl border border-sky-200">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 relative">
+      <div className="w-full max-w-5xl bg-white rounded-3xl overflow-hidden flex flex-col md:flex-row shadow-xl border border-slate-200">
         
         {/* LEFT PANEL */}
-        <div
-          className="flex flex-col justify-between p-5 sm:p-6 md:p-8 relative overflow-hidden md:w-5/12"
-          style={{ background: "linear-gradient(145deg,#0EA5E9 0%,#38BDF8 50%,#7DD3FC 100%)" }}
-        >
-          <div className="absolute w-72 h-72 rounded-full top-[-80px] right-[-80px] bg-white/10 pointer-events-none" />
-          <div className="absolute w-48 h-48 rounded-full bottom-10 left-[-60px] bg-white/[0.08] pointer-events-none" />
-          <div className="absolute inset-0 pointer-events-none"
-            style={{ backgroundImage: "radial-gradient(circle,rgba(255,255,255,0.2) 1px,transparent 1px)", backgroundSize: "22px 22px" }} />
-          
+        <div className="md:w-5/12 bg-blue-600 p-12 flex flex-col justify-between relative overflow-hidden">
           <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-1">
-              <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-white/25 border border-white/40 flex items-center justify-center backdrop-blur-sm flex-shrink-0">
-                <ShieldIcon />
-              </div>
-              <span className="font-bold text-xl md:text-2xl text-white tracking-tight" style={{ fontFamily: "'Outfit',sans-serif" }}>
-                Athen<span className="text-sky-100">ura</span>
-              </span>
-            </div>
-            <p className="text-[10px] text-white/70 tracking-[0.13em] font-semibold pl-[48px]">CODE · CREATE · INNOVATE</p>
-          </div>
-
-          <div className="relative z-10 hidden md:block mt-8 flex-1">
-            <h2 className="text-[24px] font-bold text-white leading-snug mb-3" style={{ fontFamily: "'Outfit',sans-serif" }}>
-              Join the future of<br /><span className="text-sky-100">skill assessment.</span>
+            <img src={logo} alt="Athenura" className="h-10 w-auto mb-16 brightness-0 invert opacity-90" />
+            <h2 className="text-3xl font-bold text-white leading-tight mb-4">
+              Create an Account
             </h2>
-            <p className="text-sm text-white/80 leading-relaxed mb-6">
-              Create an account to manage your quizzes, access detailed reports, and monitor progress effectively.
+            <p className="text-blue-100 text-sm leading-relaxed">
+              Register as an administrator to manage interns, configure quizzes, and access analytics.
             </p>
-            <ul className="text-xs text-white/90 space-y-3">
-              <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-sky-200" /> Secure platform access</li>
-              <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-sky-200" /> Real-time analytics</li>
-              <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-sky-200" /> Comprehensive domain testing</li>
-            </ul>
           </div>
         </div>
 
         {/* RIGHT PANEL */}
-        <div className="flex-1 bg-white flex flex-col justify-center px-5 sm:px-7 md:px-10 py-7 md:py-10">
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-sky-900 tracking-tight mb-1.5" style={{ fontFamily: "'Outfit',sans-serif" }}>
-              Create an Account
-            </h2>
-            <p className="text-[13px] text-slate-500">Fill in the details to register your profile.</p>
+        <div className="flex-1 p-12 md:p-16 flex flex-col justify-center bg-white">
+          <div className="mb-8">
+            <h3 className="text-2xl font-bold text-slate-900 mb-2">Registration</h3>
+            <p className="text-slate-500 text-sm">Enter your details to create a new admin account.</p>
           </div>
 
           <Toast message={toast.msg} type={toast.type} />
 
-          <form onSubmit={handleRegister} className="space-y-4">
-            <div>
-              <label className="block text-[11px] font-bold text-sky-700 tracking-[0.07em] uppercase mb-1.5">Full Name</label>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-3 flex items-center text-slate-400">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                </span>
-                <input
-                  type="text" name="name" value={formData.name} onChange={handleChange}
-                  placeholder="John Doe"
-                  className="w-full h-[45px] pl-10 pr-3 text-sm bg-slate-50 border-[1.5px] border-slate-200 rounded-[10px] text-sky-900 outline-none transition-all placeholder:text-slate-300 focus:border-sky-400 focus:ring-[3px] focus:ring-sky-100 focus:bg-white"
-                />
-              </div>
+          <form onSubmit={handleRegister} className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider flex items-center gap-2">
+                Full Name
+              </label>
+              <input
+                type="text" name="name" value={formData.name} onChange={handleChange}
+                placeholder="Jane Doe"
+                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-slate-400"
+              />
             </div>
 
-            <div>
-              <label className="block text-[11px] font-bold text-sky-700 tracking-[0.07em] uppercase mb-1.5">Email Address</label>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-3 flex items-center text-slate-400">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                </span>
-                <input
-                  type="email" name="email" value={formData.email} onChange={handleChange}
-                  placeholder="john@example.com"
-                  className="w-full h-[45px] pl-10 pr-3 text-sm bg-slate-50 border-[1.5px] border-slate-200 rounded-[10px] text-sky-900 outline-none transition-all placeholder:text-slate-300 focus:border-sky-400 focus:ring-[3px] focus:ring-sky-100 focus:bg-white"
-                />
-              </div>
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider flex items-center gap-2">
+                Email Address
+              </label>
+              <input
+                type="email" name="email" value={formData.email} onChange={handleChange}
+                placeholder="admin@athenura.com"
+                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-slate-400"
+              />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-[11px] font-bold text-sky-700 tracking-[0.07em] uppercase mb-1.5">Password</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider flex items-center gap-2">
+                  Password
+                </label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-3 flex items-center text-slate-400">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                  </span>
                   <input
                     type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleChange}
                     placeholder="••••••••"
-                    className="w-full h-[45px] pl-10 pr-10 text-sm bg-slate-50 border-[1.5px] border-slate-200 rounded-[10px] text-sky-900 outline-none transition-all placeholder:text-slate-300 focus:border-sky-400 focus:ring-[3px] focus:ring-sky-100 focus:bg-white"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-slate-400"
                   />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-sky-600 transition-colors">
-                    {showPassword ? 
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg> : 
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-                    }
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-[11px] font-bold text-sky-700 tracking-[0.07em] uppercase mb-1.5">Secret Key</label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-3 flex items-center text-slate-400">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
-                  </span>
-                  <input
-                    type="password" name="secretKey" value={formData.secretKey} onChange={handleChange}
-                    placeholder="Admin Key"
-                    className="w-full h-[45px] pl-10 pr-3 text-sm bg-slate-50 border-[1.5px] border-slate-200 rounded-[10px] text-sky-900 outline-none transition-all placeholder:text-slate-300 focus:border-sky-400 focus:ring-[3px] focus:ring-sky-100 focus:bg-white"
-                  />
-                </div>
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider flex items-center gap-2">
+                  System Secret
+                </label>
+                <input
+                  type="password" name="secretKey" value={formData.secretKey} onChange={handleChange}
+                  placeholder="Master Key"
+                  className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-slate-400"
+                />
               </div>
             </div>
 
             <button
               type="submit"
               disabled={loading || !isFormValid}
-              className="w-full h-[48px] mt-4 flex items-center justify-center gap-2 bg-sky-500 hover:bg-sky-600 disabled:bg-sky-300 disabled:cursor-not-allowed active:scale-[0.985] text-white font-bold text-sm rounded-[11px] transition-all shadow-[0_4px_14px_rgba(14,165,233,0.35)] disabled:shadow-none"
+              className="w-full py-3.5 mt-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <>Register Account</>
-              )}
+              {loading ? "Creating Account..." : "Create Account"}
+              <ArrowRight className="w-5 h-5" />
             </button>
           </form>
 
-          <p className="mt-6 text-center text-[12.5px] text-slate-500">
-            Already have an account?{" "}
-            <Link to="/" className="text-sky-600 font-bold hover:text-sky-700 hover:underline transition-all">
-              Login here
-            </Link>
-          </p>
+          <div className="mt-8 text-center">
+            <p className="text-sm font-medium text-slate-500">
+              Already have an account?{" "}
+              <Link to="/login" className="text-blue-600 font-semibold hover:text-blue-700 transition-colors">
+                Sign in
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>

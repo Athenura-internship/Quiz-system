@@ -1,6 +1,20 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { apiCall } from "../utils/api";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  Trophy, 
+  Timer, 
+  AlertTriangle, 
+  CheckCircle2, 
+  ChevronLeft, 
+  ChevronRight, 
+  Send,
+  Flag,
+  BookOpen,
+  ShieldAlert,
+  ArrowLeft
+} from "lucide-react";
 
 const LABELS = ["A", "B", "C", "D"];
 
@@ -11,10 +25,10 @@ function formatTime(sec) {
 }
 
 function getResultMsg(pct) {
-  if (pct >= 90) return { msg: "Outstanding! You're a star! 🌟", color: "text-sky-600" };
-  if (pct >= 75) return { msg: "Excellent work! Keep it up! 🎉", color: "text-green-600" };
-  if (pct >= 55) return { msg: "Good job! A little more practice! 👍", color: "text-amber-600" };
-  return { msg: "Keep practicing, you can do it! 💪", color: "text-red-500" };
+  if (pct >= 90) return { msg: "Outstanding Performance! Excellent work.", color: "text-emerald-600" };
+  if (pct >= 75) return { msg: "Great job! You showed strong understanding.", color: "text-blue-600" };
+  if (pct >= 55) return { msg: "Good effort! Review the topics to improve.", color: "text-amber-600" };
+  return { msg: "Needs improvement. Keep practicing!", color: "text-red-600" };
 }
 
 // ── Submit Confirmation Modal ──────────────────────────────────────────────────
@@ -24,75 +38,62 @@ function SubmitModal({ answers, totalQuestions, marked, onConfirm, onCancel }) {
   const markedCount = marked.filter(Boolean).length;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-white rounded-2xl border border-sky-100 shadow-2xl w-full max-w-sm p-6">
-        <div className="text-center mb-5">
-          <div className="w-14 h-14 bg-sky-100 rounded-full flex items-center justify-center mx-auto mb-3">
-            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-              <path d="M14 4L4 9v7c0 6.4 4.3 12.4 10 14 5.7-1.6 10-7.6 10-14V9L14 4z" stroke="#0EA5E9" strokeWidth="1.8"/>
-              <path d="M9.5 14l3 3L18.5 11" stroke="#0EA5E9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="bg-white rounded-3xl shadow-xl w-full max-w-md p-8 relative overflow-hidden"
+      >
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-blue-100">
+            <Send className="w-8 h-8 text-blue-600" />
           </div>
-          <h3 className="text-lg font-bold text-sky-900" style={{ fontFamily: "'Outfit',sans-serif" }}>
-            Submit Quiz?
+          <h3 className="text-2xl font-bold text-slate-900 mb-2">
+            Submit Assessment?
           </h3>
-          <p className="text-xs text-slate-500 mt-1">Please review before final submission</p>
+          <p className="text-sm text-slate-500 font-medium">Please review your progress before final submission.</p>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-2 mb-5">
-          <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-center">
-            <div className="text-2xl font-bold text-green-600">{attempted}</div>
-            <div className="text-[10px] text-green-700 font-semibold mt-0.5">Attempted</div>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-center">
+            <div className="text-xl font-bold text-blue-600">{attempted}</div>
+            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">Answered</div>
           </div>
-          <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-center">
-            <div className="text-2xl font-bold text-red-500">{notAttempted}</div>
-            <div className="text-[10px] text-red-600 font-semibold mt-0.5">Not Attempted</div>
+          <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-center">
+            <div className="text-xl font-bold text-red-500">{notAttempted}</div>
+            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">Unanswered</div>
           </div>
-          <div className="bg-purple-50 border border-purple-200 rounded-xl p-3 text-center">
-            <div className="text-2xl font-bold text-purple-600">{markedCount}</div>
-            <div className="text-[10px] text-purple-700 font-semibold mt-0.5">Marked</div>
-          </div>
-        </div>
-
-        {/* Legend */}
-        <div className="bg-slate-50 rounded-xl p-3 mb-5 space-y-1.5">
-          <p className="text-[11px] font-bold text-slate-500 mb-2 uppercase tracking-wide">Question Status</p>
-          <div className="flex items-center gap-2 text-xs text-slate-600">
-            <span className="w-5 h-5 rounded-md bg-green-500 flex-shrink-0 block"></span>
-            Answered — {attempted} questions
-          </div>
-          <div className="flex items-center gap-2 text-xs text-slate-600">
-            <span className="w-5 h-5 rounded-md bg-red-400 flex-shrink-0 block"></span>
-            Not Answered — {notAttempted} questions
-          </div>
-          <div className="flex items-center gap-2 text-xs text-slate-600">
-            <span className="w-5 h-5 rounded-md bg-purple-400 flex-shrink-0 block"></span>
-            Marked for Review — {markedCount} questions
+          <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-center">
+            <div className="text-xl font-bold text-amber-500">{markedCount}</div>
+            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">Flagged</div>
           </div>
         </div>
 
         {notAttempted > 0 && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mb-4 text-xs text-amber-700 font-medium">
-            ⚠ You have {notAttempted} unanswered question{notAttempted > 1 ? "s" : ""}. They will be marked wrong.
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-6 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <p className="text-sm text-amber-800 font-medium leading-tight">
+              You have {notAttempted} unanswered questions. They will be marked as incorrect if you submit now.
+            </p>
           </div>
         )}
 
-        <div className="flex gap-2">
+        <div className="flex gap-4 mt-8">
           <button
             onClick={onCancel}
-            className="flex-1 h-10 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-50 transition-all"
+            className="flex-1 h-12 rounded-xl border border-slate-200 text-slate-700 font-bold text-sm hover:bg-slate-50 transition-all"
           >
             Go Back
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 h-10 rounded-xl bg-sky-500 text-white text-sm font-bold hover:bg-sky-600 transition-all"
+            className="flex-1 h-12 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 active:scale-95 transition-all shadow-sm"
           >
-            Submit Now
+            Submit
           </button>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
@@ -100,33 +101,33 @@ function SubmitModal({ answers, totalQuestions, marked, onConfirm, onCancel }) {
 // ── Security Warning Modal ───────────────────────────────────────────────────
 function SecurityModal({ warnings, maxWarnings, onDismiss }) {
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="bg-white rounded-3xl border-2 border-red-100 shadow-2xl w-full max-w-sm p-8 text-center animate-in zoom-in duration-300">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-8 text-center border border-red-100"
+      >
         <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-            <line x1="12" y1="9" x2="12" y2="13"/>
-            <line x1="12" y1="17" x2="12.01" y2="17"/>
-          </svg>
+          <ShieldAlert className="w-10 h-10 text-red-500" />
         </div>
-        <h3 className="text-2xl font-black text-slate-900 mb-2" style={{ fontFamily: "'Outfit',sans-serif" }}>
-          Security Alert!
+        <h3 className="text-2xl font-bold text-slate-900 mb-3">
+          Security Warning
         </h3>
-        <p className="text-slate-500 text-sm leading-relaxed mb-6">
-          Tab switching or leaving the quiz window is strictly prohibited. This is your <span className="font-bold text-red-600">warning {warnings} of {maxWarnings}</span>.
+        <p className="text-slate-600 text-sm font-medium leading-relaxed mb-6">
+          Switching tabs or exiting fullscreen is not allowed. Violation <span className="font-bold text-red-600">[{warnings}/{maxWarnings}]</span> recorded.
         </p>
-        <div className="bg-red-50 rounded-2xl p-4 mb-8">
+        <div className="bg-red-50 border border-red-100 rounded-xl p-4 mb-8">
           <p className="text-xs text-red-700 font-bold uppercase tracking-wider">
-            {warnings >= maxWarnings ? "Last warning! Next violation will auto-submit." : "Please stay on this page to continue."}
+            {warnings >= maxWarnings ? "CRITICAL: Final violation. Auto-submit imminent." : "Stay on this page to prevent auto-submission."}
           </p>
         </div>
         <button
           onClick={onDismiss}
-          className="w-full h-12 rounded-2xl bg-slate-900 text-white font-bold hover:bg-slate-800 transition-all shadow-lg"
+          className="w-full h-12 rounded-xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 transition-all shadow-md"
         >
-          I Understand
+          Acknowledge
         </button>
-      </div>
+      </motion.div>
     </div>
   );
 }
@@ -180,7 +181,7 @@ export default function QuizPage() {
         startTimeRef.current = Date.now();
       }
     } catch (err) {
-      setError(err.message || "Failed to load quiz.");
+      setError(err.message || "Failed to start assessment. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -227,7 +228,6 @@ export default function QuizPage() {
     const preventDefault = (e) => e.preventDefault();
 
     const handleKeydown = (e) => {
-      // Block F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U, Ctrl+C, Ctrl+V, Ctrl+S
       const isDevTools = e.keyCode === 123 || (e.ctrlKey && e.shiftKey && [73, 74, 67].includes(e.keyCode));
       const isCopyPaste = e.ctrlKey && [85, 67, 86, 83].includes(e.keyCode);
       
@@ -263,7 +263,7 @@ export default function QuizPage() {
             await document.documentElement.requestFullscreen();
           }
         } catch (err) {
-          console.warn("Fullscreen request failed", err);
+          console.warn("Fullscreen request denied by system policy", err);
         }
       };
       enterFS();
@@ -315,10 +315,9 @@ export default function QuizPage() {
     const elapsed = Math.round((Date.now() - startTimeRef.current) / 1000);
     setTimeTaken(elapsed);
     
-    // Map answers to the format expected by backend
     const submissionAnswers = questions.map((q, i) => ({
       questionId: q._id,
-      selectedAnswer: answers[i]
+      selectedAnswer: answers[i] !== null ? questions[i].options[answers[i]] : null
     }));
 
     try {
@@ -340,7 +339,6 @@ export default function QuizPage() {
         setSubmitted(true);
         setShowModal(false);
         setShowSecurityModal(false);
-        // Exit Fullscreen on completion
         if (document.fullscreenElement) {
           document.exitFullscreen();
         }
@@ -354,279 +352,313 @@ export default function QuizPage() {
   
   if (loading) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
-      <div className="w-12 h-12 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-      <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Initializing Secure Quiz Session...</p>
+      <div className="w-12 h-12 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-6"></div>
+      <p className="text-slate-500 font-bold uppercase tracking-wider text-xs">Loading Assessment...</p>
     </div>
   );
 
   if (error) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6 text-center">
-      <div className="text-6xl mb-6">🚫</div>
-      <h2 className="text-2xl font-black text-slate-800 mb-2">Access Denied</h2>
-      <p className="text-slate-500 max-w-md mb-8">{error}</p>
-      <button onClick={() => navigate('/upcoming')} className="px-8 py-3 bg-sky-500 text-white font-bold rounded-xl shadow-lg hover:bg-sky-600 transition-all">
-        Back to Upcoming Quizzes
+      <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-6 border border-red-100">
+        <ShieldAlert className="w-10 h-10 text-red-500" />
+      </div>
+      <h2 className="text-3xl font-bold text-slate-900 mb-3">Connection Error</h2>
+      <p className="text-slate-600 max-w-sm mb-10 font-medium">{error}</p>
+      <button 
+        onClick={() => navigate('/upcoming')} 
+        className="px-8 py-3 bg-white border border-slate-300 text-slate-700 font-bold text-sm rounded-xl hover:bg-slate-50 transition-all shadow-sm"
+      >
+        Go Back
       </button>
     </div>
   );
 
-  // ── Stats ────────────────────────────────────────────────────────────────────
   const answeredCount = answers.filter((a) => a !== null).length;
   const notAnsweredCount = TOTAL - answeredCount;
   const markedCount = marked.filter(Boolean).length;
   const progressPct = Math.round(((current + 1) / TOTAL) * 100);
-  const isLastQuestionAnswered = answers[TOTAL - 1] !== null;
 
-  // ── Result ───────────────────────────────────────────────────────────────────
   const correctCount = scoreData ? scoreData.score : 0;
   const wrongCount = TOTAL - correctCount - (TOTAL - answeredCount);
   const scorePct = TOTAL > 0 ? Math.round((correctCount / TOTAL) * 100) : 0;
   const resultMsg = getResultMsg(scorePct);
 
-  // ── Timer color ──────────────────────────────────────────────────────────────
-  const timerClass =
-    timeLeft <= 60 ? "bg-red-100 text-red-700 animate-pulse"
-    : timeLeft <= 180 ? "bg-amber-100 text-amber-700"
-    : "bg-white text-sky-700";
+  const timerColorClass =
+    timeLeft <= 60 ? "text-red-500"
+    : timeLeft <= 180 ? "text-amber-500"
+    : "text-blue-600";
 
-  // ── Dot color logic ──────────────────────────────────────────────────────────
   const getDotClass = (i) => {
-    if (i === current) return "bg-sky-500 border-sky-500 text-white";
-    if (marked[i]) return "bg-purple-400 border-purple-400 text-white";
-    if (answers[i] !== null) return "bg-green-500 border-green-500 text-white";
-    if (i < current) return "bg-red-400 border-red-400 text-white";
-    return "bg-white border-sky-200 text-slate-500";
+    if (i === current) return "border-blue-600 bg-blue-50 text-blue-700 shadow-sm";
+    if (marked[i]) return "border-amber-400 bg-amber-50 text-amber-600";
+    if (answers[i] !== null) return "border-emerald-500 bg-emerald-50 text-emerald-600";
+    if (i < current) return "border-slate-300 bg-white text-slate-400";
+    return "border-slate-200 bg-white text-slate-400";
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-slate-50">
+    <div className="min-h-screen bg-slate-50 text-slate-900 overflow-x-hidden font-sans">
 
-      {showModal && (
-        <SubmitModal
-          answers={answers}
-          totalQuestions={TOTAL}
-          marked={marked}
-          onConfirm={confirmSubmit}
-          onCancel={() => setShowModal(false)}
-        />
-      )}
+      <AnimatePresence>
+        {showModal && (
+          <SubmitModal
+            answers={answers}
+            totalQuestions={TOTAL}
+            marked={marked}
+            onConfirm={confirmSubmit}
+            onCancel={() => setShowModal(false)}
+          />
+        )}
+      </AnimatePresence>
 
-      {showSecurityModal && (
-        <SecurityModal
-          warnings={warnings}
-          maxWarnings={MAX_WARNINGS}
-          onDismiss={() => setShowSecurityModal(false)}
-        />
-      )}
+      <AnimatePresence>
+        {showSecurityModal && (
+          <SecurityModal
+            warnings={warnings}
+            maxWarnings={MAX_WARNINGS}
+            onDismiss={() => setShowSecurityModal(false)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* ── HEADER ── */}
-      <div
-        className="flex items-center justify-between px-4 sm:px-6 py-3"
-        style={{ background: "linear-gradient(135deg, #0EA5E9, #38BDF8)" }}
-      >
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-white/25 border border-white/40 flex items-center justify-center">
-            <svg width="18" height="18" viewBox="0 0 22 22" fill="none">
-              <path d="M11 2L4 6.5v5c0 4.6 3.1 8.9 7 10 3.9-1.1 7-5.4 7-10v-5L11 2z" fill="white" />
-              <path d="M8 11l2.2 2.2L14 8.5" stroke="#0EA5E9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+      <div className="sticky top-0 z-40 bg-white border-b border-slate-200 py-3 px-4 md:px-8 flex items-center justify-between shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+            <BookOpen className="w-5 h-5 text-blue-600" />
           </div>
           <div>
-            <span className="font-bold text-sm text-white" style={{ fontFamily: "'Outfit',sans-serif" }}>
-              Athen<span className="text-sky-100">ura</span> Quiz
-            </span>
-            <p className="text-[10px] text-white/70 hidden sm:block">{user?.name} · {user?.uniqueId}</p>
+            <h1 className="text-lg font-bold text-slate-900 leading-tight">
+              {contestDetails?.title || "Assessment"}
+            </h1>
+            <p className="text-xs font-semibold text-slate-500 mt-0.5 hidden sm:block">
+              {user?.name} <span className="mx-1">•</span> ID: {user?.uniqueId}
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="hidden sm:block bg-white/20 border border-white/35 rounded-full px-3 py-0.5 text-xs font-semibold text-white">
-            {contestDetails?.domain}
-          </span>
-          <div className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-bold ${timerClass}`}>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.2" />
-              <path d="M7 4.5V7l1.5 1.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-            </svg>
+        <div className="flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-md bg-slate-50 border border-slate-200">
+             <span className="w-2 h-2 bg-blue-500 rounded-full" />
+             <span className="text-xs font-bold text-slate-600 uppercase">{contestDetails?.domain}</span>
+          </div>
+          <div className={`flex items-center gap-2 font-mono text-xl font-bold bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 ${timerColorClass}`}>
+            <Timer className="w-5 h-5" />
             {formatTime(timeLeft)}
           </div>
         </div>
       </div>
 
       {/* ── PROGRESS BAR ── */}
-      <div className="h-1.5 bg-sky-200">
-        <div className="h-full bg-sky-500 transition-all duration-500" style={{ width: `${progressPct}%` }} />
+      <div className="h-1.5 w-full bg-slate-200">
+        <motion.div 
+          initial={{ width: 0 }}
+          animate={{ width: `${progressPct}%` }}
+          className="h-full bg-blue-500" 
+        />
       </div>
 
       {/* ── BODY ── */}
-      <div className="max-w-3xl mx-auto px-3 sm:px-5 py-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 lg:py-12 grid grid-cols-1 lg:grid-cols-4 gap-8">
 
         {!submitted ? (
           <>
-            <div className="grid grid-cols-4 gap-2 mb-4">
-              {[
-                { label: "Total", val: TOTAL, color: "text-sky-900" },
-                { label: "Answered", val: answeredCount, color: "text-green-600" },
-                { label: "Not Answered", val: notAnsweredCount, color: "text-red-500" },
-                { label: "Marked", val: markedCount, color: "text-purple-600" },
-              ].map((s) => (
-                <div key={s.label} className="bg-white rounded-xl border border-sky-100 p-2 text-center">
-                  <div className={`text-lg sm:text-xl font-bold ${s.color}`}>{s.val}</div>
-                  <div className="text-[9px] sm:text-[10px] text-slate-500 font-medium mt-0.5 leading-tight">{s.label}</div>
-                </div>
-              ))}
+            {/* Sidebar Navigation */}
+            <div className="order-2 lg:order-1 space-y-6">
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                 <div className="grid grid-cols-2 gap-3 mb-6">
+                    <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-100 text-center">
+                        <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-1">Answered</p>
+                        <p className="text-xl font-bold text-emerald-700">{answeredCount}</p>
+                    </div>
+                    <div className="bg-amber-50 rounded-xl p-3 border border-amber-100 text-center">
+                        <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-1">Flagged</p>
+                        <p className="text-xl font-bold text-amber-700">{markedCount}</p>
+                    </div>
+                 </div>
+
+                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Question Map</p>
+                 <div className="grid grid-cols-5 gap-2">
+                    {questions.map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => goTo(i)}
+                        className={`aspect-square rounded-lg border-2 text-xs font-bold transition-all hover:scale-105 active:scale-95 ${getDotClass(i)}`}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+                 </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hidden lg:block">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Legend</p>
+                  <div className="space-y-3">
+                    {[
+                      { color: "bg-blue-500", label: "Current Focus" },
+                      { color: "bg-emerald-500", label: "Answered" },
+                      { color: "bg-amber-400", label: "Flagged" },
+                      { color: "bg-slate-300", label: "Unanswered" },
+                    ].map((l) => (
+                      <div key={l.label} className="flex items-center gap-3 text-xs font-semibold text-slate-600">
+                        <span className={`w-3 h-3 rounded-full ${l.color}`}></span>
+                        {l.label}
+                      </div>
+                    ))}
+                  </div>
+              </div>
             </div>
 
-            <div className="flex flex-wrap gap-2 mb-3">
-              {[
-                { color: "bg-sky-500", label: "Current" },
-                { color: "bg-green-500", label: "Answered" },
-                { color: "bg-red-400", label: "Not Answered" },
-                { color: "bg-purple-400", label: "Marked" },
-                { color: "bg-white border border-sky-200", label: "Not Visited" },
-              ].map((l) => (
-                <div key={l.label} className="flex items-center gap-1.5 text-[10px] text-slate-600 font-medium">
-                  <span className={`w-3.5 h-3.5 rounded-sm ${l.color} flex-shrink-0`}></span>
-                  {l.label}
-                </div>
-              ))}
-            </div>
-
-            <div className="flex flex-wrap gap-1.5 mb-4">
-              {questions.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => goTo(i)}
-                  className={`w-7 h-7 rounded-md border-[1.5px] text-[10px] font-bold transition-all ${getDotClass(i)}`}
-                >
-                  {i + 1}
-                </button>
-              ))}
-            </div>
-
-            <div className="bg-white rounded-3xl border border-sky-100/50 shadow-sm p-6 sm:p-8 mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <span className="bg-sky-500 text-white text-xs font-bold px-3 py-1 rounded-lg">
-                  Q {current + 1} / {TOTAL}
-                </span>
-                <div className="flex items-center gap-2">
+            {/* Question Area */}
+            <div className="order-1 lg:order-2 lg:col-span-3">
+              <motion.div 
+                key={current}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white rounded-3xl border border-slate-200 p-8 sm:p-12 shadow-sm min-h-[400px] flex flex-col"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                  <div className="flex items-center">
+                    <span className="px-4 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold tracking-wide">
+                      Question {current + 1} of {TOTAL}
+                    </span>
+                  </div>
                   <button
                     onClick={toggleMark}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-all
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wide border transition-all
                       ${marked[current]
-                        ? "bg-purple-100 border-purple-300 text-purple-700"
-                        : "bg-slate-50 border-slate-200 text-slate-500 hover:border-purple-300 hover:text-purple-600"
+                        ? "bg-amber-50 border-amber-200 text-amber-700"
+                        : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700"
                       }`}
                   >
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                      <path d="M6 1l1.5 3H11L8.5 6l1 3L6 7.5 2.5 9l1-3L1 4h3.5L6 1z"
-                        stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round"
-                        fill={marked[current] ? "currentColor" : "none"} />
-                    </svg>
-                    {marked[current] ? "Marked" : "Mark for Review"}
+                    <Flag className={`w-4 h-4 ${marked[current] ? 'fill-current' : ''}`} />
+                    {marked[current] ? "Flagged" : "Flag for Review"}
                   </button>
                 </div>
-              </div>
 
-              <p className="text-sm sm:text-base font-semibold text-sky-900 leading-relaxed mb-5">
-                {questions[current]?.questionText}
-              </p>
+                <div className="flex-1">
+                  <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight leading-relaxed mb-8">
+                    {questions[current]?.questionText}
+                  </h2>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {questions[current]?.options.map((opt, i) => {
-                  const isSelected = answers[current] === i;
-                  return (
-                    <button
-                      key={i}
-                      onClick={() => selectAnswer(i)}
-                      className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl border-[1.5px] text-left text-sm font-medium transition-all
-                        ${isSelected
-                          ? "border-sky-400 bg-sky-50 text-sky-800"
-                          : "border-slate-200 bg-slate-50 text-sky-900 hover:border-sky-400 hover:bg-sky-50"
-                        }`}
-                    >
-                      <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-[10px] font-bold flex-shrink-0
-                        ${isSelected ? "border-sky-500 bg-sky-500 text-white" : "border-slate-300 text-slate-400"}`}>
-                        {LABELS[i]}
-                      </span>
-                      <span>{opt}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+                  <div className="space-y-3">
+                    {questions[current]?.options.map((opt, i) => {
+                      const isSelected = answers[current] === i;
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => selectAnswer(i)}
+                          className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl border-2 text-left transition-all duration-200
+                            ${isSelected
+                              ? "border-blue-500 bg-blue-50"
+                              : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                            }`}
+                        >
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm shrink-0 transition-all
+                            ${isSelected ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-500"}`}>
+                            {LABELS[i]}
+                          </div>
+                          <span className={`text-sm sm:text-base font-semibold ${isSelected ? "text-blue-900" : "text-slate-700"}`}>
+                            {opt}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
 
-            <div className="flex items-center justify-between gap-2">
-              <button
-                onClick={() => goTo(current - 1)}
-                disabled={current === 0}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-100 text-sky-700 text-sm font-bold disabled:opacity-40 hover:bg-sky-200 transition-all"
-              >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M9 3L5 7l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                </svg>
-                Prev
-              </button>
+                <div className="flex items-center justify-between gap-4 mt-12 pt-8 border-t border-slate-100">
+                  <button
+                    onClick={() => goTo(current - 1)}
+                    disabled={current === 0}
+                    className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-slate-700 font-bold text-sm border border-slate-200 disabled:opacity-30 hover:bg-slate-50 transition-all"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                    Previous
+                  </button>
 
-              {current === TOTAL - 1 && (
-                <button
-                  onClick={() => setShowModal(true)}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-900 text-white text-sm font-bold hover:bg-sky-800 transition-all"
-                >
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path d="M2.5 7.5L5.5 10.5L11.5 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  Submit Quiz
-                </button>
-              )}
-
-              {current < TOTAL - 1 ? (
-                <button
-                  onClick={() => goTo(current + 1)}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-500 text-white text-sm font-bold hover:bg-sky-600 transition-all"
-                >
-                  Next
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                  </svg>
-                </button>
-              ) : (
-                <div className="w-20" />
-              )}
+                  <div>
+                    {current === TOTAL - 1 ? (
+                      <button
+                        onClick={() => setShowModal(true)}
+                        className="flex items-center gap-2 px-8 py-3 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 active:scale-95 transition-all shadow-sm"
+                      >
+                        Submit Assessment
+                        <Send className="w-4 h-4 ml-1" />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => goTo(current + 1)}
+                        className="flex items-center gap-2 px-8 py-3 rounded-xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 transition-all shadow-sm"
+                      >
+                        Next
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
             </div>
           </>
         ) : (
-          <div className="bg-white rounded-2xl border border-sky-100 p-6 sm:p-8 text-center">
-            <div className="text-5xl mb-3">
-              {scorePct >= 75 ? "🏆" : scorePct >= 55 ? "👍" : "💪"}
-            </div>
-            <div className="text-6xl font-bold text-sky-500 leading-none mb-1" style={{ fontFamily: "'Outfit',sans-serif" }}>
-              {correctCount}
-            </div>
-            <div className="text-base text-slate-500 mb-3">out of {TOTAL}</div>
-            <div className={`text-base font-bold mb-1 ${resultMsg.color}`}>{resultMsg.msg}</div>
-            <div className="text-xs text-slate-400 mb-6">Score: {scorePct}% · Results saved to leaderboard</div>
-
-            <div className="grid grid-cols-4 gap-2 mb-6">
-              {[
-                { label: "Correct", val: correctCount, color: "text-green-600", bg: "bg-green-50 border-green-100" },
-                { label: "Wrong", val: wrongCount, color: "text-red-500", bg: "bg-red-50 border-red-100" },
-                { label: "Skipped", val: TOTAL - answeredCount, color: "text-amber-600", bg: "bg-amber-50 border-amber-100" },
-                { label: "Spent", val: `${Math.floor(timeTaken / 60)}m ${timeTaken % 60}s`, color: "text-sky-600", bg: "bg-sky-50 border-sky-100" },
-              ].map((s) => (
-                <div key={s.label} className={`rounded-xl p-3 border ${s.bg}`}>
-                  <div className={`text-xl font-bold ${s.color}`}>{s.val}</div>
-                  <div className="text-[10px] text-slate-500 mt-1">{s.label}</div>
-                </div>
-              ))}
-            </div>
-
-            <button
-              onClick={() => navigate('/intern')}
-              className="mt-5 w-full h-11 bg-sky-500 hover:bg-sky-600 text-white font-bold text-sm rounded-xl transition-all"
+          /* Result View */
+          <div className="lg:col-span-4 max-w-3xl mx-auto w-full pt-8">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white rounded-3xl border border-slate-200 p-8 sm:p-16 text-center shadow-sm relative overflow-hidden"
             >
-              Back to Dashboard
-            </button>
+              
+              <div className="relative z-10">
+                <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-slate-100">
+                   {scorePct >= 75 ? (
+                      <Trophy className="w-10 h-10 text-emerald-500" />
+                   ) : (
+                      <BookOpen className="w-10 h-10 text-blue-500" />
+                   )}
+                </div>
+                
+                <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Assessment Completed</h2>
+                
+                <div className="flex items-baseline justify-center gap-2 mb-2">
+                  <span className="text-6xl sm:text-7xl font-bold text-slate-900 tracking-tight leading-none">{correctCount}</span>
+                  <span className="text-xl font-bold text-slate-400">/ {TOTAL}</span>
+                </div>
+                
+                <p className={`text-base font-bold mb-10 ${resultMsg.color}`}>
+                  {resultMsg.msg}
+                </p>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-12">
+                  {[
+                    { label: "Score", val: `${scorePct}%`, color: "text-blue-600", bg: "bg-blue-50 border-blue-100" },
+                    { label: "Incorrect", val: wrongCount, color: "text-red-500", bg: "bg-red-50 border-red-100" },
+                    { label: "Unanswered", val: TOTAL - answeredCount, color: "text-amber-500", bg: "bg-amber-50 border-amber-100" },
+                    { label: "Time Taken", val: `${Math.floor(timeTaken / 60)}m ${timeTaken % 60}s`, color: "text-slate-700", bg: "bg-slate-50 border-slate-200" },
+                  ].map((s) => (
+                    <div key={s.label} className={`rounded-2xl p-4 border ${s.bg}`}>
+                      <div className={`text-xl font-bold mb-1 ${s.color}`}>{s.val}</div>
+                      <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{s.label}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <button
+                    onClick={() => navigate('/intern')}
+                    className="h-12 px-8 bg-slate-900 text-white font-bold text-sm rounded-xl hover:bg-slate-800 transition-all shadow-sm"
+                  >
+                    Return to Dashboard
+                  </button>
+                  <button
+                    onClick={() => navigate('/my-quizzes')}
+                    className="h-12 px-8 bg-white border border-slate-200 text-slate-700 font-bold text-sm rounded-xl hover:bg-slate-50 transition-all shadow-sm"
+                  >
+                    View History
+                  </button>
+                </div>
+              </div>
+            </motion.div>
           </div>
         )}
       </div>

@@ -13,7 +13,7 @@ export const finalizeContest = async (req, res) => {
       return res.status(400).json({ success: false, message: "❌ contestId is required." });
     }
 
-    const contest = await Contest.findOne({ contestId });
+    const contest = await Contest.findById(contestId);
     if (!contest) {
       return res.status(404).json({ success: false, message: "❌ Contest not found." });
     }
@@ -101,7 +101,7 @@ export const getContestLeaderboard = async (req, res) => {
   try {
     const { contestId } = req.params;
 
-    const contest = await Contest.findOne({ contestId });
+    const contest = await Contest.findById(contestId);
     if (!contest) {
       return res.status(404).json({ success: false, message: "❌ Contest not found." });
     }
@@ -184,16 +184,13 @@ export const getContestLeaderboard = async (req, res) => {
 // @access  Protected
 export const getOverallLeaderboard = async (req, res) => {
   try {
-    // 1. Get all interns
+    // 1. Get all active interns
     const interns = await Intern.find({ status: "Active" })
-      .sort({ badgesEarned: -1 })
-      .limit(10)
       .select("name uniqueId email domain badgesEarned isInternOfTheMonth");
 
-    // 2. Fetch total scores from Attempt model
-    const internIds = interns.map(i => i.uniqueId);
+    // 2. Fetch total scores from Attempt model for all interns
     const scoreaggregation = await Attempt.aggregate([
-      { $match: { internId: { $in: internIds }, isSubmitted: true } },
+      { $match: { isSubmitted: true } },
       { $group: { _id: "$internId", totalScore: { $sum: "$score" } } }
     ]);
 
@@ -202,10 +199,12 @@ export const getOverallLeaderboard = async (req, res) => {
       return acc;
     }, {});
 
+    // 3. Merge and sort
     const enrichedInterns = interns.map(intern => ({
       ...intern._doc,
       totalScore: scoreMap[intern.uniqueId] || 0
-    }));
+    })).sort((a, b) => b.badgesEarned - a.badgesEarned || b.totalScore - a.totalScore)
+      .slice(0, 10);
 
     res.status(200).json({
       success: true,
@@ -228,8 +227,6 @@ export const getDomainLeaderboard = async (req, res) => {
       domain: { $regex: domain, $options: "i" },
       status: "Active"
     })
-      .sort({ badgesEarned: -1 })
-      .limit(10)
       .select("name uniqueId email domain badgesEarned isInternOfTheMonth");
 
     const internIds = interns.map(i => i.uniqueId);
@@ -246,7 +243,8 @@ export const getDomainLeaderboard = async (req, res) => {
     const enrichedInterns = interns.map(intern => ({
       ...intern._doc,
       totalScore: scoreMap[intern.uniqueId] || 0
-    }));
+    })).sort((a, b) => b.badgesEarned - a.badgesEarned || b.totalScore - a.totalScore)
+      .slice(0, 10);
 
     res.status(200).json({
       success: true,

@@ -1,56 +1,67 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import logo from "../assets/Athenura.png";
 
 export default function Footer() {
   return (
-    <footer className="bg-gradient-to-b from-sky-900 to-[#061f35] text-sky-200 pt-12 pb-6 px-6 md:px-[6%]">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+    <footer className="bg-white border-t border-slate-200 py-12 px-6 md:px-[6%]">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
         {/* Brand */}
-        <div>
-          <img src="/logo.svg" alt="Athenura" className="h-8 w-auto object-contain mb-3" />
-          <p className="text-sm leading-7 text-sky-300">
-            Code. Create. Innovate.
-            <br />
-            The AI-powered quiz contest platform for intern programs —
-            automated, fair, and built for scale.
+        <div className="md:col-span-2">
+          <img src={logo} alt="Athenura" className="h-8 w-auto object-contain mb-4" />
+          <p className="text-sm leading-6 text-slate-500 max-w-sm">
+            The AI-powered assessment platform for intern programs.
+            Automated, fair, and built to scale your hiring process seamlessly.
           </p>
         </div>
 
-        {/* Platform links */}
+        {/* Quick Links */}
         <div>
-          <h4 className="font-syne font-bold text-sm text-white mb-3 tracking-wide">
-            Platform
+          <h4 className="font-bold text-sm text-slate-900 mb-4 tracking-wide uppercase">
+            Quick Links
           </h4>
           {[
             { to: "/",        label: "Home"    },
-            { to: "/about",   label: "About"   },
+            { to: "/about",   label: "About Us"   },
             { to: "/contact", label: "Contact" },
           ].map(({ to, label }) => (
             <Link
               key={to}
               to={to}
-              className="block text-sm text-sky-300 hover:text-white mb-2 transition-colors"
+              className="block text-sm text-slate-500 hover:text-blue-600 mb-3 transition-colors font-medium"
             >
               {label}
             </Link>
           ))}
         </div>
 
-        {/* Features */}
+        {/* Legal */}
         <div>
-          <h4 className="font-syne font-bold text-sm text-white mb-3 tracking-wide">
-            Features
+          <h4 className="font-bold text-sm text-slate-900 mb-4 tracking-wide uppercase">
+            Legal
           </h4>
-          {["Domain Quizzes", "AI Generation", "Leaderboard", "Badges"].map((f) => (
-            <span key={f} className="block text-sm text-sky-300 mb-2">
-              {f}
-            </span>
+          {[
+            { to: "/rules", label: "Rules" },
+            { to: "/terms", label: "Terms & Conditions" },
+          ].map(({ to, label }) => (
+            <Link
+              key={to}
+              to={to}
+              className="block text-sm text-slate-500 hover:text-blue-600 mb-3 transition-colors font-medium"
+            >
+              {label}
+            </Link>
           ))}
         </div>
       </div>
 
-      <div className="border-t border-sky-200/10 pt-5 text-center text-sm text-sky-400">
-        © 2026 <img src="/logo-icon.svg" alt="Athenura" className="inline-block h-4 w-auto object-contain align-middle" />. All rights reserved. | www.athenura.in
+      <div className="max-w-7xl mx-auto border-t border-slate-100 pt-6 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-400 font-medium">
+        <div>
+          © {new Date().getFullYear()} Athenura. All rights reserved.
+        </div>
+        <div>
+          www.athenura.in
+        </div>
       </div>
     </footer>
   );

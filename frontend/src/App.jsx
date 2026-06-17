@@ -6,6 +6,8 @@ import { ThemeProvider } from './context/ThemeContext';
 import Home from './pages/Home';
 import About from './pages/About';
 import Contact from './pages/Contact';
+import Rules from './pages/Rules';
+import Terms from './pages/Terms';
 
 import ProfilePage from './components/Profile';
 import LoginPage from './pages/LoginPage';
@@ -39,6 +41,8 @@ function AppRoutes() {
           <Route path='/' element={<Home />} />
           <Route path='/about' element={<About />} />
           <Route path='/contact' element={<Contact />} />
+          <Route path='/rules' element={<Rules />} />
+          <Route path='/terms' element={<Terms />} />
         </Route>
         <Route path='/login' element={<LoginPage />} />
         <Route path='/admin-login' element={<AdminLoginPage />} />

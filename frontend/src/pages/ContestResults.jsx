@@ -1,31 +1,45 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
 import { apiCall } from '../utils/api';
+import { 
+  BarChart3, 
+  ArrowLeft, 
+  Trophy, 
+  Users, 
+  Clock, 
+  Target, 
+  ChevronRight, 
+  Layout,
+  Star,
+  Search,
+  ShieldCheck,
+  Zap,
+  TrendingUp,
+  Award,
+  AlertCircle
+} from 'lucide-react';
 
 const ContestResults = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  console.log("Route Param ID:", id);
   const [quizData, setQuizData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const fetchResults = async () => {
       setIsLoading(true);
       try {
         const response = await apiCall(`/leaderboard/contest/${id}`);
-        console.log("Contest Details Response:", response);
         if (response && response.success) {
-          console.log("Contest Results Data:", response.data);
           setQuizData(response.data);
         } else {
-          setError(response?.message || "Could not load result data.");
+          setError(response?.message || "Failed to retrieve results.");
         }
       } catch (err) {
-        console.error("Failed to fetch contest results:", err);
-        setError("Could not load result data.");
+        setError(err.message || "Network error. Could not retrieve data.");
       } finally {
         setIsLoading(false);
       }
@@ -36,18 +50,23 @@ const ContestResults = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-12 h-12 border-4 border-sky-200 border-t-sky-500 rounded-full animate-spin"></div>
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-6">
+        <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin" />
+        <p className="text-sm font-semibold text-slate-500">Loading Results...</p>
       </div>
     );
   }
 
   if (error || !quizData) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <p className="text-red-500 font-bold mb-4">{error || "Result not found."}</p>
-        <button onClick={() => navigate('/contests')} className="px-6 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-xl font-bold transition-colors">
-          Back to Contests
+      <div className="flex flex-col items-center justify-center py-24 text-center bg-white rounded-3xl border border-red-200 shadow-sm max-w-lg mx-auto mt-10">
+        <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-8 border border-red-100">
+           <AlertCircle className="w-10 h-10 text-red-500" />
+        </div>
+        <h2 className="text-2xl font-bold text-slate-900 mb-4">Error Loading Results</h2>
+        <p className="text-slate-500 mb-10 font-medium px-8">{error || "Data not found."}</p>
+        <button onClick={() => navigate('/contests')} className="px-8 py-3 bg-white border border-slate-300 text-slate-700 font-bold text-sm rounded-xl hover:bg-slate-50 transition-all shadow-sm">
+          Return to Assessments
         </button>
       </div>
     );
@@ -57,155 +76,252 @@ const ContestResults = () => {
   const participants = [...unSortedParticipants].sort((a, b) => {
     const scoreA = a.score !== undefined ? a.score : -1;
     const scoreB = b.score !== undefined ? b.score : -1;
-    if (scoreB !== scoreA) {
-      return scoreB - scoreA;
-    }
+    if (scoreB !== scoreA) return scoreB - scoreA;
     const timeA = a.timeTaken !== undefined ? a.timeTaken : Infinity;
     const timeB = b.timeTaken !== undefined ? b.timeTaken : Infinity;
     return timeA - timeB;
   });
+
+  const filteredParticipants = participants.filter(p => 
+     p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+     (p.uniqueId || "").toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const totalParticipants = participants.length;
+  const maxScore = quizData.totalScore || quizData.totalQuestions || 0;
+  const avgScore = participants.length > 0 ? (participants.reduce((acc, p) => acc + (p.score || 0), 0) / participants.length).toFixed(1) : 0;
 
   return (
-    <div className="w-full h-full p-4 sm:p-6 lg:p-8 font-sans overflow-x-hidden">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-7xl mx-auto space-y-8"
-      >
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200/80 dark:border-slate-700/50 p-6 md:p-8">
-          <div className="flex items-start gap-4">
-            <button 
-              onClick={() => navigate('/contests')}
-              className="mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-sky-500 transition-all shrink-0"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-            </button>
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-2xl md:text-3xl font-black text-slate-800 dark:text-white">Contest Results</h1>
-                <span className="px-3 py-1 bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 text-xs font-bold uppercase tracking-wide rounded-full">
-                  {quizData.domain}
-                </span>
-              </div>
-              <h2 className="text-lg text-slate-600 dark:text-slate-300 font-bold">{quizData.title}</h2>
-              <div className="flex flex-wrap items-center gap-4 mt-3 text-sm font-medium text-slate-500 dark:text-slate-400">
-                 <div className="flex items-center gap-1.5">
-                   <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                   <span>{quizData.date ? new Date(quizData.date).toLocaleDateString() : 'N/A'}</span>
-                 </div>
-                 <div className="flex items-center gap-1.5">
-                   <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                   <span>{totalParticipants} Participant{totalParticipants !== 1 ? 's' : ''}</span>
-                 </div>
-              </div>
-            </div>
+    <div className="space-y-10 animate-fade-in pb-20">
+      {/* Header Section */}
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+        <div className="flex-1">
+          <div className="flex flex-wrap items-center gap-3 mb-3">
+             <button 
+               onClick={() => navigate('/contests')}
+               className="p-2 bg-white hover:bg-slate-50 rounded-lg text-slate-500 transition-all border border-slate-200 shadow-sm"
+             >
+                <ArrowLeft className="w-4 h-4" />
+             </button>
+             <span className="text-xs font-bold text-blue-600 bg-blue-50 border border-blue-100 px-3 py-1 rounded-md">
+                {quizData.domain}
+             </span>
+          </div>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+            Assessment Results
+          </h1>
+          <div className="flex items-center gap-4 mt-2">
+            <h2 className="text-base font-semibold text-slate-500">{quizData.title}</h2>
+            {!quizData.isFinalized && totalParticipants > 0 && (
+              <button 
+                onClick={async () => {
+                  try {
+                    setIsLoading(true);
+                    const res = await apiCall("/leaderboard/finalize", {
+                      method: "POST",
+                      body: JSON.stringify({ contestId: id })
+                    });
+                    if (res.success) {
+                       window.location.reload();
+                    } else {
+                       setError(res.message);
+                    }
+                  } catch (err) {
+                    setError(err.message || "Failed to award badges.");
+                    setIsLoading(false);
+                  }
+                }}
+                className="px-4 py-1.5 bg-blue-600 text-white font-semibold text-sm rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2"
+              >
+                <Award className="w-4 h-4" />
+                Award Badges
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Results Table */}
-        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200/80 dark:border-slate-700/50 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50/80 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700/50">
-                  <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Rank</th>
-                  <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Student</th>
-                  <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap text-center">Marks</th>
-                  <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap text-center">Percentage</th>
-                  <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap text-center">Status</th>
-                  <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap text-right">Submitted At</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
-                {participants.length === 0 ? (
-                  <tr>
-                    <td colSpan="6" className="py-12 text-center">
-                      <div className="flex flex-col items-center justify-center">
-                         <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800/50 rounded-2xl flex items-center justify-center mb-4 text-slate-400">
-                           <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                         </div>
-                         <p className="text-slate-500 font-medium text-sm">No students participated in this contest.</p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  participants.map((intern, index) => {
-                    const isTop1 = index === 0;
-                    const isTop2 = index === 1;
-                    const isTop3 = index === 2;
-                    let rowClass = "hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors";
-                    if (isTop1) rowClass = "bg-amber-50/30 dark:bg-amber-900/10 hover:bg-amber-50 dark:hover:bg-amber-900/20";
-                    else if (isTop2) rowClass = "bg-slate-50/50 dark:bg-slate-800/30 hover:bg-slate-100/50 dark:hover:bg-slate-800/50";
-                    else if (isTop3) rowClass = "bg-orange-50/30 dark:bg-orange-900/10 hover:bg-orange-50 dark:hover:bg-orange-900/20";
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+           <div className="bg-white px-6 py-5 rounded-2xl border border-slate-200 shadow-sm text-center">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Participants</p>
+              <div className="flex items-center justify-center gap-2">
+                 <Users className="w-5 h-5 text-blue-500" />
+                 <span className="text-2xl font-bold text-slate-900">{totalParticipants}</span>
+              </div>
+           </div>
+           <div className="bg-white px-6 py-5 rounded-2xl border border-slate-200 shadow-sm text-center">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Avg Accuracy</p>
+              <div className="flex items-center justify-center gap-2">
+                 <Target className="w-5 h-5 text-emerald-500" />
+                 <span className="text-2xl font-bold text-slate-900">{Math.round((avgScore / maxScore) * 100) || 0}%</span>
+              </div>
+           </div>
+           <div className="bg-white px-6 py-5 rounded-2xl border border-slate-200 shadow-sm text-center hidden sm:block">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Total Questions</p>
+              <div className="flex items-center justify-center gap-2">
+                 <Layout className="w-5 h-5 text-indigo-500" />
+                 <span className="text-2xl font-bold text-slate-900">{maxScore}</span>
+              </div>
+           </div>
+        </div>
+      </div>
 
-                    // Safely handle missing values & calculate percentage
-                    const score = intern.score !== undefined ? intern.score : '-';
-                    const maxScore = quizData.totalScore || quizData.totalQuestions || 0;
-                    let percentage = '-';
-                    if (intern.score !== undefined && maxScore > 0) {
-                      percentage = Math.round((intern.score / maxScore) * 100) + '%';
-                    } else if (intern.percentage) {
-                       percentage = intern.percentage + '%';
-                    }
-                    
-                    const status = intern.status || 'Submitted';
-                    const submittedAt = intern.submittedAt || intern.timeTaken ? `${intern.timeTaken} sec` : 'N/A';
+      {/* Main Content Area */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        {/* Rankings Table */}
+        <div className="xl:col-span-2 space-y-6">
+           <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                 <TrendingUp className="w-5 h-5 text-slate-400" />
+                 <span className="text-lg font-bold text-slate-900">Participant Standings</span>
+              </div>
+              <div className="relative group w-48 sm:w-64">
+                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                 <input 
+                    type="text" 
+                    placeholder="Search participants..."
+                    className="w-full h-10 pl-9 pr-4 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:border-blue-500 outline-none transition-all shadow-sm"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                 />
+              </div>
+           </div>
 
-                    return (
-                      <tr key={intern.uniqueId || index} className={rowClass}>
-                        <td className="py-4 px-6">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm
-                                ${isTop1 ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400' :
-                                  isTop2 ? 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300' :
-                                  isTop3 ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' :
-                                  'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
-                                }
-                            `}>
-                                {index + 1}
-                            </div>
-                        </td>
-                        <td className="py-4 px-6">
-                            <div className="flex flex-col">
-                                <span className={`font-bold ${isTop1 ? 'text-amber-700 dark:text-amber-400' : isTop2 ? 'text-slate-800 dark:text-slate-200' : isTop3 ? 'text-orange-700 dark:text-orange-400' : 'text-slate-800 dark:text-slate-200'}`}>
-                                    {intern.name} {isTop1 && '👑'}
-                                </span>
-                                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{intern.uniqueId || intern.email || 'N/A'}</span>
-                            </div>
-                        </td>
-                        <td className="py-4 px-6 text-center">
-                            <span className="font-bold text-slate-700 dark:text-slate-300">{score}</span>
-                            {maxScore > 0 && <span className="text-xs text-slate-400 ml-1">/ {maxScore}</span>}
-                        </td>
-                        <td className="py-4 px-6 text-center">
-                            <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-bold">
-                                {percentage}
-                            </span>
-                        </td>
-                        <td className="py-4 px-6 text-center">
-                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold
-                                ${status.toLowerCase() === 'submitted' || status.toLowerCase() === 'completed' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 
-                                  'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'}`}
-                            >
-                                <span className={`w-1.5 h-1.5 rounded-full ${status.toLowerCase() === 'submitted' || status.toLowerCase() === 'completed' ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
-                                {status}
-                            </span>
-                        </td>
-                        <td className="py-4 px-6 text-right">
-                            <span className="text-sm text-slate-600 dark:text-slate-400 font-medium">{submittedAt}</span>
+           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+             <div className="overflow-x-auto">
+               <table className="w-full text-left">
+                 <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200">
+                       <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">Rank</th>
+                       <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">Participant</th>
+                       <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Score</th>
+                       <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Accuracy</th>
+                       <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Duration</th>
+                    </tr>
+                 </thead>
+                 <tbody className="divide-y divide-slate-100">
+                    {filteredParticipants.length > 0 ? (
+                      filteredParticipants.map((intern, index) => {
+                        const isTop3 = index < 3;
+                        const scorePct = maxScore > 0 ? Math.round(((intern.score || 0) / maxScore) * 100) : 0;
+                        
+                        return (
+                          <motion.tr 
+                            key={intern.uniqueId || index}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.02 }}
+                            className={`group transition-colors ${isTop3 ? 'bg-blue-50/30' : 'hover:bg-slate-50'}`}
+                          >
+                             <td className="py-4 px-6">
+                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm
+                                   ${index === 0 ? 'bg-amber-100 text-amber-600' :
+                                     index === 1 ? 'bg-slate-200 text-slate-600' :
+                                     index === 2 ? 'bg-orange-100 text-orange-600' :
+                                     'bg-slate-50 border border-slate-200 text-slate-500'}`}>
+                                   {index + 1}
+                                </div>
+                             </td>
+                             <td className="py-4 px-6">
+                                <div>
+                                   <p className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                                      {intern.name}
+                                      {index === 0 && <Award className="w-4 h-4 text-amber-500" />}
+                                   </p>
+                                   <p className="text-xs font-medium text-slate-500 mt-0.5">ID: {intern.uniqueId || "N/A"}</p>
+                                </div>
+                             </td>
+                             <td className="py-4 px-6 text-center">
+                                <span className="text-base font-bold text-slate-900">{intern.score || 0}</span>
+                                <span className="text-xs text-slate-400 font-semibold ml-1">/ {maxScore}</span>
+                             </td>
+                             <td className="py-4 px-6 text-center">
+                                <div className="flex flex-col items-center gap-1">
+                                   <span className={`text-xs font-bold px-2 py-1 rounded-md
+                                      ${scorePct >= 90 ? 'bg-emerald-100 text-emerald-700' : 
+                                        scorePct >= 75 ? 'bg-blue-100 text-blue-700' :
+                                        'bg-slate-100 text-slate-600'}`}>
+                                      {scorePct}%
+                                   </span>
+                                </div>
+                             </td>
+                             <td className="py-4 px-6 text-right">
+                                <div className="flex items-center justify-end gap-1.5 text-slate-500 text-sm font-medium">
+                                   <Clock className="w-4 h-4" />
+                                   {intern.timeTaken ? `${Math.floor(intern.timeTaken / 60)}m ${intern.timeTaken % 60}s` : 'N/A'}
+                                </div>
+                             </td>
+                          </motion.tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan="5" className="py-20 text-center">
+                           <div className="flex flex-col items-center gap-4 text-slate-400">
+                              <Search className="w-8 h-8" />
+                              <p className="text-sm font-semibold">No matching participants.</p>
+                           </div>
                         </td>
                       </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+                    )}
+                 </tbody>
+               </table>
+             </div>
+           </div>
         </div>
-        
-      </motion.div>
+
+        {/* Sidebar Analytics */}
+        <div className="space-y-6">
+           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8">
+              <div className="flex items-center gap-2 mb-6">
+                 <BarChart3 className="w-5 h-5 text-blue-500" />
+                 <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Performance Analytics</h3>
+              </div>
+              
+              <div className="space-y-8">
+                 <div className="space-y-2">
+                    <div className="flex justify-between text-xs font-bold text-slate-600">
+                       <span>Average Accuracy</span>
+                       <span className="text-blue-600">{Math.round((avgScore / maxScore) * 100) || 0}%</span>
+                    </div>
+                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                       <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${(avgScore / maxScore) * 100}%` }}
+                          className="h-full bg-blue-500 rounded-full" 
+                       />
+                    </div>
+                 </div>
+
+                 <div className="grid grid-cols-1 gap-4">
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                       <div className="flex items-center gap-2 mb-1">
+                          <Star className="w-4 h-4 text-amber-500" />
+                          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Top Performers (&gt;90%)</span>
+                       </div>
+                       <p className="text-2xl font-bold text-slate-900">{participants.filter(p => (p.score / maxScore) >= 0.9).length}</p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                       <div className="flex items-center gap-2 mb-1">
+                          <TrendingUp className="w-4 h-4 text-emerald-500" />
+                          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Overall Trend</span>
+                       </div>
+                       <p className="text-2xl font-bold text-slate-900">Positive</p>
+                    </div>
+                 </div>
+              </div>
+           </div>
+
+           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
+              <div className="flex items-center gap-2 mb-3">
+                 <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                 <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Verified Results</h3>
+              </div>
+              <p className="text-sm font-medium text-slate-500 leading-relaxed">
+                 All submission data has been verified. The results are locked and recorded in the system.
+              </p>
+           </div>
+        </div>
+      </div>
     </div>
   );
 };

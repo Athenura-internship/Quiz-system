@@ -18,6 +18,7 @@ import authRouter from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import quizRoutes from "./routes/quizRoutes.js";
 import leaderboardRoutes from "./routes/leaderboardRoutes.js";
+import contactRoutes from "./routes/contactRoutes.js";
 import cookieParser from "cookie-parser";
 
 // Connect Database
@@ -34,6 +35,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/admin", adminRoutes);
 app.use("/api/quiz", quizRoutes);
 app.use("/api/leaderboard", leaderboardRoutes);
+app.use("/api/contact", contactRoutes);
 
 // Handle 404
 app.use((req, res) => {

@@ -1,161 +1,32 @@
-import React, { useState } from "react";
+import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-
-/* ─────────────────────────────────────────
-   HERO ILLUSTRATION
-───────────────────────────────────────── */
-function HeroIllustration() {
-  return (
-    <div className="relative w-full max-w-[520px] h-[440px] mx-auto select-none">
-      {/* Glow blobs */}
-      <div className="absolute top-10 right-10 w-56 h-56 rounded-full bg-sky-300/25 blur-2xl" />
-      <div className="absolute bottom-4 left-6 w-40 h-40 rounded-full bg-brand-400/20 blur-2xl" />
-
-      {/* ── Leaderboard card ── */}
-      <div className="absolute top-8 left-2 w-40 bg-white rounded-2xl shadow-xl overflow-hidden z-10 animate-float anim-fill">
-        <div className="bg-brand-700 px-3 py-2">
-          <span className="text-white text-[11px] font-syne font-bold">Leaderboard</span>
-        </div>
-        {[
-          ["AK", "Frontend",    19],
-          ["PS", "Data Sci",    18],
-          ["RV", "Backend",     17],
-          ["SP", "UI/UX",       17],
-          ["AN", "Backend",     16],
-        ].map(([ini, dom, sc], i) => (
-          <div
-            key={i}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 border-b border-sky-50 last:border-0"
-          >
-            <div className="w-5 h-5 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0">
-              <span className="text-[8px] font-bold text-brand-700">{ini}</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-[8px] font-medium text-gray-700 truncate">{dom}</div>
-            </div>
-            <span className="text-[9px] font-bold text-brand-600">{sc}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Trophy badge ── */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 animate-float2 anim-fill">
-        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-500
-          shadow-[0_8px_28px_rgba(234,179,8,0.45)] flex flex-col items-center justify-center">
-          <span className="text-[10px] text-white font-bold">🏆</span>
-          <span className="font-syne font-extrabold text-white text-sm leading-none">81</span>
-        </div>
-      </div>
-
-      {/* ── Quiz card ── */}
-      <div className="absolute top-12 right-0 w-48 bg-white rounded-2xl shadow-xl p-3 z-10 animate-float3 anim-fill">
-        <div className="flex gap-1 mb-2">
-          {["bg-sky-200", "bg-sky-300", "bg-sky-400"].map((c, i) => (
-            <div key={i} className={`w-2 h-2 rounded-full ${c}`} />
-          ))}
-        </div>
-        <div className="text-[10px] font-syne font-bold text-sky-900 mb-2">Domain Quiz</div>
-        {[
-          "Creative Style Sheets",
-          "Cascading Style Sheets",
-          "Computer Style Sheets",
-        ].map((opt, i) => (
-          <div
-            key={i}
-            className={`flex items-center gap-1.5 rounded-lg px-2 py-1.5 mb-1
-              ${i === 1 ? "bg-brand-700" : "bg-sky-50"}`}
-          >
-            <div className={`w-2.5 h-2.5 rounded-full border flex-shrink-0
-              ${i === 1 ? "bg-white border-white" : "border-sky-300"}`} />
-            <span className={`text-[9px] truncate ${i === 1 ? "text-white font-medium" : "text-gray-600"}`}>
-              {opt}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Code badges ── */}
-      <div className="absolute top-1/2 left-[-8px] -translate-y-1/2 w-10 h-10 rounded-xl
-        bg-gradient-to-br from-sky-400 to-brand-600 flex items-center justify-center
-        shadow-lg z-10 animate-float2 anim-fill">
-        <span className="text-white font-syne font-bold text-[9px]">&lt;/&gt;</span>
-      </div>
-      <div className="absolute top-8 right-[-6px] w-9 h-9 rounded-xl
-        bg-gradient-to-br from-sky-300 to-brand-500 flex items-center justify-center
-        shadow-lg z-10 animate-float3 anim-fill">
-        <span className="text-white font-syne font-bold text-[8px]">&lt;/&gt;</span>
-      </div>
-
-      {/* ── Three people ── */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/3 flex items-end z-20">
-        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-64 h-12 rounded-full bg-sky-300/30 blur-xl" />
-
-        {/* Person 1 – blue */}
-        <svg viewBox="0 0 70 140" className="w-20 h-36 drop-shadow-md flex-shrink-0">
-          <circle cx="35" cy="22" r="14" fill="#f3d5b5" />
-          <path d="M12 55 Q35 44 58 55 L60 120 H48 L44 88 L44 120 H26 L26 88 L22 120 H10Z" fill="#1565c0" />
-          <path d="M10 60 Q4 70 7 82 L13 80 L16 64Z" fill="#1565c0" />
-          <path d="M60 60 Q66 68 62 80 L56 78 L55 64Z" fill="#1565c0" />
-          <path d="M21 22 Q23 6 35 5 Q47 6 49 22 Q45 13 35 13 Q25 13 21 22Z" fill="#2c1810" />
-        </svg>
-
-        {/* Person 2 – teal (center, laptop) */}
-        <svg viewBox="0 0 80 160" className="w-24 h-44 drop-shadow-md -mx-2 z-10 flex-shrink-0">
-          <circle cx="40" cy="24" r="16" fill="#d4956a" />
-          <path d="M16 62 Q40 50 64 62 L67 140 H53 L49 100 L49 140 H31 L31 100 L27 140 H13Z" fill="#4dd0e1" />
-          <path d="M24 62 Q40 52 56 62 Q53 54 40 52 Q27 54 24 62Z" fill="#26c6da" />
-          <path d="M64 66 Q74 58 72 45 L66 47 L68 62Z" fill="#4dd0e1" />
-          <path d="M72 42 Q74 36 70 34 Q66 38 68 45Z" fill="#d4956a" />
-          <rect x="18" y="118" width="44" height="26" rx="4" fill="#90caf9" />
-          <circle cx="40" cy="131" r="5" fill="#1565c0" />
-          <path d="M37 131 L40 127 L43 131Z" fill="white" />
-        </svg>
-
-        {/* Person 3 – grey (thumbs up) */}
-        <svg viewBox="0 0 65 130" className="drop-shadow-md flex-shrink-0" style={{ width: 68, height: 128 }}>
-          <circle cx="32" cy="18" r="13" fill="#c9956a" />
-          <path d="M10 50 Q32 40 54 50 L56 114 H44 L41 82 L41 114 H23 L23 82 L20 114 H8Z" fill="#e0e0e0" />
-          <path d="M54 54 Q63 50 64 41 L58 40 L57 52Z" fill="#e0e0e0" />
-          <path d="M63 38 Q65 33 61 31 Q57 33 59 41Z" fill="#c9956a" />
-          <path d="M19 18 Q21 5 32 4 Q43 5 45 18 Q41 9 32 9 Q23 9 19 18Z" fill="#1a0a00" />
-        </svg>
-      </div>
-
-      {/* Sparkles */}
-      {[[8, 28], [88, 18], [3, 62], [94, 52]].map(([l, t], i) => (
-        <div
-          key={i}
-          className="absolute w-2 h-2 rounded-full bg-sky-400/60 animate-pulse"
-          style={{ left: `${l}%`, top: `${t}%`, animationDelay: `${i * 0.4}s` }}
-        />
-      ))}
-    </div>
-  );
-}
+import { ArrowRight, ArrowUpRight, Cpu, Trophy, Check, BarChart3, Users, Zap, BrainCircuit } from "lucide-react";
 
 /* ─────────────────────────────────────────
    STATS BAR
 ───────────────────────────────────────── */
 function StatsBar() {
   const stats = [
-    { num: "12+", label: "Domains Supported"    },
-    { num: "20",  label: "Questions Per Contest" },
-    { num: "AI",  label: "Groq-Powered Questions"},
-    { num: "0",   label: "Manual Effort Needed"  },
+    { label: "Assessments Completed", value: "25,000+", icon: <Zap className="w-5 h-5 text-blue-600" /> },
+    { label: "Active Interns", value: "10,000+", icon: <Users className="w-5 h-5 text-blue-600" /> },
+    { label: "Platform Uptime", value: "99.9%", icon: <Check className="w-5 h-5 text-blue-600" /> },
   ];
+
   return (
-    <div className="bg-white border-b border-sky-100 px-6 md:px-[6%] py-6
-      grid grid-cols-2 md:grid-cols-4 gap-3">
-      {stats.map(({ num, label }) => (
-        <div
-          key={label}
-          className="text-center py-4 px-3 rounded-2xl bg-sky-50 border border-sky-100
-            hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(2,132,199,0.1)] transition-all"
-        >
-          <div className="font-syne font-extrabold text-3xl text-brand-700 leading-none">{num}</div>
-          <div className="text-xs text-gray-500 mt-1.5 font-medium">{label}</div>
-        </div>
-      ))}
+    <div className="relative z-20 -mt-10 px-6 md:px-12 max-w-7xl mx-auto">
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 md:p-8 shadow-sm flex flex-col md:flex-row justify-around items-center gap-8">
+        {stats.map((stat, i) => (
+          <div key={i} className="flex items-center gap-4 w-full md:w-auto justify-center">
+            <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+              {stat.icon}
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-slate-900 tracking-tight">{stat.value}</div>
+              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{stat.label}</div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -163,70 +34,51 @@ function StatsBar() {
 /* ─────────────────────────────────────────
    FEATURES
 ───────────────────────────────────────── */
-const FEATURES = [
-  {
-    icon: "M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5",
-    title: "Domain-Based Quizzes",
-    desc: "Each intern automatically receives questions from their exact domain — Frontend, Backend, UI/UX, Data Science and 8+ more.",
-  },
-  {
-    icon: "M13 2L3 14h9l-1 8 10-12h-9l1-8z",
-    title: "AI Question Generation",
-    desc: "Groq API auto-generates 20 MCQs per domain with four options. Existing questions are reused to avoid duplication.",
-  },
-  {
-    icon: "M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75",
-    title: "Real-Time Leaderboard",
-    desc: "Rankings by score then time. Interns search their position using their unique ID — transparent and merit-first.",
-  },
-  {
-    icon: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z",
-    title: "Badges & Recognition",
-    desc: "Win a contest, earn a badge. 3 badges in a month = Intern of the Month. History tracked forever, monthly counts reset.",
-  },
-  {
-    icon: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
-    title: "Anti-Cheat System",
-    desc: "Tab-switch detection, one attempt per intern, question shuffling, and backend timing validation — contests stay fair.",
-  },
-  {
-    icon: "M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z",
-    title: "Admin Control Centre",
-    desc: "Upload intern data, create contests, trigger generation, and monitor all domain results from one centralised dashboard.",
-  },
-];
-
 function FeaturesSection() {
   return (
-    <section id="features" className="py-16 px-6 md:px-[6%] bg-gray-50">
-      <SectionTag>Platform Features</SectionTag>
-      <SectionTitle>Everything your intern program needs</SectionTitle>
-      <SectionSub>
-        From automated question generation to real-time leaderboards —
-        built to scale with zero manual overhead.
-      </SectionSub>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-10">
-        {FEATURES.map(({ icon, title, desc }) => (
-          <div
-            key={title}
-            className="bg-white border border-sky-100 rounded-2xl p-6 relative overflow-hidden
-              group hover:-translate-y-1.5 hover:shadow-[0_20px_50px_rgba(2,132,199,0.12)]
-              hover:border-sky-200 transition-all duration-300"
-          >
-            <div className="absolute top-0 left-0 right-0 h-[3px]
-              bg-gradient-to-r from-brand-700 to-sky-400
-              scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300" />
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-brand-700 to-sky-400
-              flex items-center justify-center mb-4
-              shadow-[0_6px_16px_rgba(2,132,199,0.28)]">
-              <svg className="w-5 h-5 fill-white" viewBox="0 0 24 24">
-                <path d={icon} />
-              </svg>
-            </div>
-            <h3 className="font-syne font-bold text-[15px] text-sky-900 mb-2">{title}</h3>
-            <p className="text-[13px] text-gray-500 leading-relaxed">{desc}</p>
-          </div>
-        ))}
+    <section id="features" className="py-24 px-6 md:px-12 relative max-w-7xl mx-auto">
+      <div className="text-center mb-16 space-y-4">
+        <h2 className="text-sm font-semibold text-blue-600 tracking-wider uppercase">Platform Capabilities</h2>
+        <h3 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">
+          Everything you need to manage assessments.
+        </h3>
+        <p className="text-slate-600 max-w-2xl mx-auto text-lg">
+          A robust environment for testing, tracking, and analyzing intern performance at scale.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2 bg-white border border-slate-200 rounded-2xl p-10 shadow-sm hover:shadow-md transition-shadow">
+          <BrainCircuit className="w-8 h-8 text-blue-600 mb-6" />
+          <h4 className="text-xl font-bold text-slate-900 mb-3">Dynamic Question Banks</h4>
+          <p className="text-slate-600 leading-relaxed max-w-md">
+            Automatically generate and rotate questions from a vast library of domain-specific topics, ensuring assessments remain fair and comprehensive.
+          </p>
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-2xl p-10 shadow-sm hover:shadow-md transition-shadow">
+          <BarChart3 className="w-8 h-8 text-blue-600 mb-6" />
+          <h4 className="text-xl font-bold text-slate-900 mb-3">Deep Analytics</h4>
+          <p className="text-slate-600 leading-relaxed">
+            Track progress over time with comprehensive visual dashboards and performance metrics.
+          </p>
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-2xl p-10 shadow-sm hover:shadow-md transition-shadow">
+          <Trophy className="w-8 h-8 text-blue-600 mb-6" />
+          <h4 className="text-xl font-bold text-slate-900 mb-3">Global Leaderboards</h4>
+          <p className="text-slate-600 leading-relaxed">
+            Motivate candidates by tracking relative performance across your entire intern cohort.
+          </p>
+        </div>
+
+        <div className="md:col-span-2 bg-white border border-slate-200 rounded-2xl p-10 shadow-sm hover:shadow-md transition-shadow">
+          <Users className="w-8 h-8 text-blue-600 mb-6" />
+          <h4 className="text-xl font-bold text-slate-900 mb-3">Cohort Management</h4>
+          <p className="text-slate-600 leading-relaxed max-w-md">
+            Easily group interns into specialized cohorts. Assign specific assessments, set deadlines, and review aggregate performance metrics.
+          </p>
+        </div>
       </div>
     </section>
   );
@@ -236,120 +88,47 @@ function FeaturesSection() {
    HOW IT WORKS
 ───────────────────────────────────────── */
 const STEPS = [
-  { num: "01", title: "Admin Creates Contest",  desc: "Set a date, select domains. System checks MongoDB for existing questions immediately." },
-  { num: "02", title: "AI Generates Questions", desc: "Groq API produces 20 MCQs per domain. Duplicates detected and reused automatically." },
-  { num: "03", title: "Interns Take the Quiz",  desc: "Login with unique ID and joining date, get the right domain quiz, answer in time." },
-  { num: "04", title: "Results & Recognition",  desc: "Scores, rankings, badges and Intern of the Month published after the contest ends." },
+  { title: "Select a Domain", desc: "Choose from specialized tech and business disciplines." },
+  { title: "Generate Assessment", desc: "The platform creates a tailored evaluation based on your requirements." },
+  { title: "Administer Test", desc: "Candidates complete the proctored challenge within the allotted timeframe." },
+  { title: "Review Results", desc: "Receive immediate, granular feedback on candidate performance." },
 ];
 
 function HowSection() {
   return (
-    <section className="py-16 px-6 md:px-[6%]
-      bg-gradient-to-br from-brand-700 via-brand-800 to-[#0d2d5e]
-      relative overflow-hidden">
-      <div className="absolute bottom-[-80px] right-[-60px] w-80 h-80 rounded-full bg-sky-400/10" />
-      <SectionTag light>How It Works</SectionTag>
-      <SectionTitle white>Four steps. Zero complexity.</SectionTitle>
-      <SectionSub light>
-        From contest setup to intern results — the entire lifecycle runs automatically.
-      </SectionSub>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-10 relative z-10">
-        {STEPS.map(({ num, title, desc }) => (
-          <div
-            key={num}
-            className="bg-white/[0.08] border border-white/15 rounded-2xl p-6
-              hover:bg-white/[0.14] hover:-translate-y-1 transition-all duration-300"
-          >
-            <div className="font-syne font-extrabold text-4xl text-sky-300 opacity-30 leading-none mb-3">
-              {num}
-            </div>
-            <h3 className="font-syne font-bold text-sm text-white mb-2">{title}</h3>
-            <p className="text-xs text-brand-100 leading-relaxed">{desc}</p>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-/* ─────────────────────────────────────────
-   LEADERBOARD
-───────────────────────────────────────── */
-const LB_DATA = [
-  { pos: "#1", pc: "text-yellow-400", ini: "AK", bg: "bg-yellow-100", fg: "text-yellow-900", name: "Ayush Kumar",  dom: "Frontend",    sc: 19 },
-  { pos: "#2", pc: "text-gray-400",   ini: "PS", bg: "bg-green-100",  fg: "text-green-900",  name: "Priya Sharma", dom: "Data Science", sc: 18 },
-  { pos: "#3", pc: "text-orange-400", ini: "RV", bg: "bg-orange-100", fg: "text-orange-900", name: "Rohan Verma",  dom: "Backend",      sc: 17 },
-  { pos: "#4", pc: "text-gray-400",   ini: "SP", bg: "bg-pink-100",   fg: "text-pink-900",   name: "Sneha Patel",  dom: "UI/UX",        sc: 17 },
-  { pos: "#5", pc: "text-gray-400",   ini: "AN", bg: "bg-sky-100",    fg: "text-sky-900",    name: "Arjun Nair",   dom: "Backend",      sc: 16 },
-];
-
-function LeaderboardSection() {
-  return (
-    <section className="py-16 px-6 md:px-[6%] bg-sky-50">
-      <SectionTag>Live Rankings</SectionTag>
-      <SectionTitle>See who's leading the pack</SectionTitle>
-      <SectionSub>Transparent, merit-based — ranked by score, time as tiebreaker.</SectionSub>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mt-10">
-        {/* Table */}
-        <div className="bg-white rounded-2xl overflow-hidden shadow-[0_8px_40px_rgba(2,132,199,0.12)]">
-          <div className="bg-gradient-to-r from-brand-700 to-sky-600 px-6 py-4
-            flex justify-between items-center">
-            <span className="font-syne font-bold text-sm text-white">
-              April 2026 — Top Performers
-            </span>
-            <span className="text-xs text-white/65">Score / 20</span>
-          </div>
-          {LB_DATA.map(({ pos, pc, ini, bg, fg, name, dom, sc }) => (
-            <div
-              key={pos}
-              className="flex items-center gap-3 px-5 py-3 border-b border-sky-50
-                last:border-0 hover:bg-sky-50 transition-colors"
-            >
-              <span className={`font-syne font-extrabold text-sm w-7 flex-shrink-0 ${pc}`}>{pos}</span>
-              <div className={`w-8 h-8 rounded-full ${bg} ${fg} flex items-center justify-center font-bold text-xs flex-shrink-0`}>
-                {ini}
-              </div>
-              <span className="flex-1 text-sm font-medium text-gray-700 truncate">{name}</span>
-              <span className="text-[11px] px-2.5 py-1 rounded-full bg-brand-50 text-brand-800 font-medium flex-shrink-0">
-                {dom}
-              </span>
-              <span className="font-syne font-extrabold text-sm text-brand-700 ml-1 flex-shrink-0">
-                {sc}
-              </span>
-            </div>
-          ))}
-          <div className="px-6 py-3 text-center text-xs text-gray-400">
-            Search your ranking with your intern ID →
+    <section className="py-24 px-6 md:px-12 bg-white border-y border-slate-200">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+        <div className="order-2 lg:order-1 relative rounded-2xl border border-slate-200 bg-slate-50 p-12 flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+             <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Check className="w-10 h-10 text-blue-600" />
+             </div>
+             <h3 className="text-xl font-bold text-slate-900">Seamless Assessment Flow</h3>
+             <p className="text-slate-500 mt-2">No setup required. Works out of the box.</p>
           </div>
         </div>
 
-        {/* Info */}
-        <div>
-          <h3 className="font-syne font-extrabold text-2xl text-sky-900 mb-3 leading-tight">
-            Fair. Transparent.
-            <br />Merit-first.
-          </h3>
-          <p className="text-sm text-gray-500 leading-relaxed mb-5">
-            Rankings by highest score, with time as tiebreaker. No favoritism — only performance counts.
-          </p>
-          <div className="flex flex-col gap-3">
-            {[
-              { label: "Score-first ranking",        sub: "Most correct answers wins"                    },
-              { label: "Time as tiebreaker",          sub: "Faster interns rank higher on equal scores"  },
-              { label: "Badge & monthly recognition", sub: "3 wins = Intern of the Month"                },
-            ].map(({ label, sub }) => (
-              <div
-                key={label}
-                className="flex items-center gap-3 p-3.5 bg-brand-50 rounded-2xl border border-sky-200"
-              >
-                <div className="w-9 h-9 bg-brand-700 rounded-full flex items-center justify-center flex-shrink-0">
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
+        <div className="order-1 lg:order-2 space-y-12">
+          <div>
+            <h2 className="text-sm font-semibold text-blue-600 tracking-wider uppercase mb-3">The Process</h2>
+            <h3 className="text-3xl font-bold text-slate-900 tracking-tight mb-4">
+              Streamlined evaluation workflow.
+            </h3>
+            <p className="text-slate-600 text-lg">
+              Designed to remove friction so you can focus entirely on assessing talent.
+            </p>
+          </div>
+
+          <div className="space-y-8 relative">
+            <div className="absolute left-[1.15rem] top-4 bottom-4 w-px bg-slate-200"></div>
+            {STEPS.map((step, idx) => (
+              <div key={idx} className="flex gap-6 relative z-10">
+                <div className="w-10 h-10 rounded-full bg-white border-2 border-blue-600 flex items-center justify-center text-sm font-bold text-blue-600 flex-shrink-0 mt-1">
+                  {idx + 1}
                 </div>
                 <div>
-                  <div className="font-semibold text-[13px] text-sky-900">{label}</div>
-                  <div className="text-xs text-gray-500">{sub}</div>
+                  <h4 className="text-lg font-bold text-slate-900 mb-1">{step.title}</h4>
+                  <p className="text-slate-600 leading-relaxed">{step.desc}</p>
                 </div>
               </div>
             ))}
@@ -361,140 +140,170 @@ function LeaderboardSection() {
 }
 
 /* ─────────────────────────────────────────
-   CTA BANNER
+   LEADERBOARD
 ───────────────────────────────────────── */
-function CTASection() {
+const LB_DATA = [
+  { pos: 1, ini: "AK", bg: "bg-blue-100 text-blue-700", name: "Ayush Kumar", dom: "Frontend", sc: 19, trend: "+2" },
+  { pos: 2, ini: "PS", bg: "bg-purple-100 text-purple-700", name: "Priya Sharma", dom: "Data Science", sc: 18, trend: "-" },
+  { pos: 3, ini: "RV", bg: "bg-emerald-100 text-emerald-700", name: "Rohan Verma", dom: "Backend", sc: 17, trend: "+1" },
+  { pos: 4, ini: "SP", bg: "bg-slate-100 text-slate-700", name: "Sneha Patel", dom: "UI/UX", sc: 17, trend: "-1" },
+];
+
+function LeaderboardSection() {
   return (
-    <section className="bg-gradient-to-r from-sky-600 to-brand-900 py-16 px-6 md:px-[6%]
-      text-center relative overflow-hidden">
-      <div className="absolute top-[-60px] left-[-60px] w-64 h-64 rounded-full bg-white/[0.06]" />
-      <div className="relative z-10">
-        <h2 className="font-syne font-extrabold text-[clamp(22px,3.5vw,40px)] text-white mb-3">
-          Ready to gamify your intern program?
-        </h2>
-        <p className="text-sky-200 text-sm mb-7 max-w-md mx-auto leading-7">
-          Set up your first contest in minutes. No manual question writing, no spreadsheet scoring.
-        </p>
-        <Link
-          to="/contact"
-          className="inline-block bg-white text-brand-700 px-8 py-3.5 rounded-full
-            font-semibold text-sm shadow-[0_6px_20px_rgba(0,0,0,0.15)]
-            hover:-translate-y-0.5 transition-all"
-        >
-          Contact Us Today
-        </Link>
+    <section className="py-24 px-6 md:px-12 max-w-5xl mx-auto">
+      <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-6">
+        <div>
+          <h2 className="text-3xl font-bold text-slate-900 tracking-tight mb-3">
+            Top Performers
+          </h2>
+          <p className="text-slate-600 text-lg">
+            Track performance across all active cohorts.
+          </p>
+        </div>
+        <button className="text-sm font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 px-6 py-2.5 rounded-xl transition-colors shadow-sm">
+          View All Results
+        </button>
+      </div>
+
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="grid grid-cols-12 gap-4 px-8 py-4 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider bg-slate-50">
+          <div className="col-span-1">Rank</div>
+          <div className="col-span-6 md:col-span-5">Candidate</div>
+          <div className="hidden md:block col-span-4">Specialization</div>
+          <div className="col-span-5 md:col-span-2 text-right">Score</div>
+        </div>
+
+        <div className="divide-y divide-slate-100">
+          {LB_DATA.map((row) => (
+            <div key={row.pos} className="grid grid-cols-12 gap-4 px-8 py-4 items-center hover:bg-slate-50 transition-colors">
+              <div className="col-span-1 font-bold text-slate-400">#{row.pos}</div>
+              <div className="col-span-6 md:col-span-5 flex items-center gap-4">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm flex-shrink-0 ${row.bg}`}>
+                  {row.ini}
+                </div>
+                <span className="font-semibold text-slate-900 truncate">{row.name}</span>
+              </div>
+              <div className="hidden md:block col-span-4">
+                <span className="text-xs px-2.5 py-1 bg-slate-100 border border-slate-200 rounded-md text-slate-600 font-medium">
+                  {row.dom}
+                </span>
+              </div>
+              <div className="col-span-5 md:col-span-2 flex justify-end items-center gap-4">
+                <span className={`text-xs font-semibold ${row.trend.includes('+') ? 'text-emerald-600' : row.trend.includes('-1') ? 'text-red-600' : 'text-slate-400'}`}>
+                  {row.trend}
+                </span>
+                <span className="font-bold text-lg text-slate-900">
+                  {row.sc} <span className="text-slate-400 text-sm font-medium">/ 20</span>
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
 }
 
-
-
 /* ─────────────────────────────────────────
-   SHARED HELPERS
+   CTA BANNER
 ───────────────────────────────────────── */
-function SectionTag({ children, light }) {
+function CTASection() {
+  const navigate = useNavigate();
   return (
-    <div className={`inline-block text-[11px] font-bold tracking-[0.12em] uppercase
-      px-3.5 py-1.5 rounded-full mb-4
-      ${light ? "bg-white/15 text-brand-100" : "bg-brand-50 text-sky-600"}`}>
-      {children}
-    </div>
-  );
-}
-function SectionTitle({ children, white }) {
-  return (
-    <h2 className={`font-syne font-extrabold text-[clamp(22px,3vw,36px)]
-      leading-tight mb-3 ${white ? "text-white" : "text-sky-900"}`}>
-      {children}
-    </h2>
-  );
-}
-function SectionSub({ children, light }) {
-  return (
-    <p className={`text-sm leading-7 max-w-lg ${light ? "text-brand-100" : "text-gray-500"}`}>
-      {children}
-    </p>
+    <section className="py-16 px-6 md:px-12 pb-32">
+      <div className="max-w-5xl mx-auto bg-blue-600 p-12 md:p-16 rounded-3xl text-center shadow-xl">
+        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 tracking-tight">
+          Ready to streamline your assessments?
+        </h2>
+        <p className="text-lg text-blue-100 mb-8 max-w-2xl mx-auto">
+          Deploy your first contest in minutes. Stop manually grading spreadsheets and start uncovering real talent.
+        </p>
+        <button
+          onClick={() => navigate('/register')}
+          className="px-8 py-3.5 rounded-xl bg-white text-blue-600 font-bold text-lg hover:bg-slate-50 transition-colors shadow-sm"
+        >
+          Create Admin Account
+        </button>
+      </div>
+    </section>
   );
 }
 
 /* ─────────────────────────────────────────
-   HOME PAGE (default export)
+   HOME PAGE
 ───────────────────────────────────────── */
 export default function Home() {
   const navigate = useNavigate();
 
   return (
-    <>
-      {/* ── HERO ── */}
-      <section className="relative overflow-hidden
-        bg-gradient-to-br from-[#d4ebf9] via-[#bee0f7] to-[#a4d3f5]
-        min-h-[calc(100vh-68px)] flex items-center px-6 md:px-[6%] py-14">
-
-        {/* Background blobs */}
-        <div className="absolute top-[-130px] right-[-90px] w-[480px] h-[480px]
-          rounded-full bg-brand-400/10 animate-float anim-fill" />
-        <div className="absolute bottom-[-70px] left-[-70px] w-64 h-64
-          rounded-full bg-sky-400/10 animate-float2 anim-fill" />
-
-        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-10
-          items-center w-full max-w-7xl mx-auto">
-
-          {/* Left */}
-          <div>
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2.5 bg-white border border-sky-200
-              rounded-full px-5 py-2.5 mb-6
-              shadow-[0_2px_14px_rgba(2,132,199,0.1)]
-              animate-fade-up anim-fill delay-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-sky-500 animate-pulse-dot flex-shrink-0" />
-              <span className="text-[13px] font-semibold text-sky-700 tracking-tight">
-                AI-Powered Quiz Platform
+    <div className="bg-slate-50 min-h-screen font-sans text-slate-900">
+      {/* ── HERO SECTION ── */}
+      <section className="relative pt-32 pb-32 px-6 md:px-12 flex items-center">
+        <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center">
+          
+          {/* Left Side: Text Content */}
+          <div className="text-left space-y-6 pt-12 md:pt-0">
+            <h1 className="text-5xl md:text-6xl font-bold tracking-tight text-slate-900 leading-[1.1] pb-2">
+              The standard for <br />
+              <span className="text-blue-600">
+                intern assessments.
               </span>
-            </div>
-
-            {/* Headline */}
-            <h1
-              className="font-syne font-extrabold leading-[1.05] text-sky-900 mb-5
-                animate-fade-up anim-fill delay-2"
-              style={{ fontSize: "clamp(46px, 6vw, 72px)" }}
-            >
-              Code.
-              <br />Create.
-              <br /><span className="text-brand-500">Compete.</span>
             </h1>
 
-            <p className="text-[15px] text-gray-600 leading-8 max-w-[420px] mb-8
-              animate-fade-up anim-fill delay-3">
-              A domain-based quiz contest platform for interns —
-              where every question matches your skill area,
-              and every score tells your story.
+            <p className="text-lg md:text-xl text-slate-600 max-w-lg leading-relaxed pt-2">
+              Experience the next generation of professional learning. Robust quizzes, immediate feedback, and real-time cohort analytics.
             </p>
 
-            <div className="flex gap-3 flex-wrap animate-fade-up anim-fill delay-4">
-              <a
-                href="#features"
-                className="bg-brand-700 text-white px-7 py-3.5 rounded-full text-sm
-                  font-semibold shadow-[0_6px_20px_rgba(2,132,199,0.4)]
-                  hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(2,132,199,0.5)]
-                  transition-all"
-              >
-                Explore the Platform
-              </a>
+            <div className="flex flex-col sm:flex-row gap-4 pt-6">
               <button
                 onClick={() => navigate('/login')}
-                className="bg-white text-sky-700 border border-sky-300 px-7 py-3.5
-                  rounded-full text-sm font-medium
-                  hover:bg-sky-50 hover:border-sky-500 transition-all cursor-pointer"
+                className="px-6 py-3.5 rounded-xl bg-blue-600 text-white font-medium text-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-sm"
               >
-                Login to Quiz
+                Sign in to Platform
+                <ArrowRight className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => navigate('/admin-login')}
+                className="px-6 py-3.5 rounded-xl bg-white border border-slate-300 text-slate-700 font-medium text-lg hover:bg-slate-50 transition-colors flex items-center justify-center shadow-sm"
+              >
+                Admin Access
               </button>
             </div>
           </div>
 
-          {/* Right illustration – hidden on small screens */}
-          <div className="hidden lg:flex justify-center">
-            <HeroIllustration />
+          {/* Right Side: Clean Graphic */}
+          <div className="relative w-full h-full flex items-center justify-center pt-10 lg:pt-0">
+             <div className="w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-xl p-8 transform rotate-1 hover:rotate-0 transition-transform duration-500 relative z-10">
+                <div className="flex items-center justify-between mb-8 border-b border-slate-100 pb-4">
+                   <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                         <BarChart3 className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                         <div className="text-sm font-bold text-slate-900">Performance Overview</div>
+                         <div className="text-xs text-slate-500">Q3 Assessment</div>
+                      </div>
+                   </div>
+                   <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">Active</span>
+                </div>
+                <div className="space-y-4">
+                   <div className="h-4 bg-slate-100 rounded w-3/4"></div>
+                   <div className="h-4 bg-slate-100 rounded w-1/2"></div>
+                   <div className="h-4 bg-slate-100 rounded w-5/6"></div>
+                   <div className="h-4 bg-slate-100 rounded w-2/3"></div>
+                </div>
+                <div className="mt-8 pt-4 border-t border-slate-100 flex justify-between items-center">
+                   <div className="text-xs text-slate-500">Last updated: Just now</div>
+                   <div className="flex -space-x-2">
+                      <div className="w-8 h-8 rounded-full bg-slate-200 border-2 border-white"></div>
+                      <div className="w-8 h-8 rounded-full bg-slate-300 border-2 border-white"></div>
+                      <div className="w-8 h-8 rounded-full bg-blue-100 border-2 border-white flex items-center justify-center text-xs font-bold text-blue-600">+5</div>
+                   </div>
+                </div>
+             </div>
+             {/* Decorative background shape to replace the glowing blobs */}
+             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-[400px] max-h-[400px] bg-slate-100 rounded-full -z-0"></div>
           </div>
         </div>
       </section>
@@ -504,6 +313,8 @@ export default function Home() {
       <HowSection />
       <LeaderboardSection />
       <CTASection />
-    </>
+
+
+    </div>
   );
 }

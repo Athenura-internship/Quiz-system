@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiCall } from '../utils/api';
+import { Search, Trophy, Medal, Star, ChevronRight, Activity } from 'lucide-react';
 
 const LeaderboardTable = ({ initialTab = 'overall', initialDomain = '', hideControls = false }) => {
   const [leaderboardData, setLeaderboardData] = useState([]);
@@ -19,12 +20,11 @@ const LeaderboardTable = ({ initialTab = 'overall', initialDomain = '', hideCont
         
         const response = await apiCall(endpoint);
         if (response && response.success) {
-          // Flatten data if needed. InternLeaderboard expects data in response.data
-          setLeaderboardData(response.data.slice(0, 10)); // Top 10 for dashboard
+          setLeaderboardData(response.data.slice(0, 10)); 
         }
       } catch (err) {
         console.error("Leaderboard fetch failed:", err);
-        setError("Could not load rankings.");
+        setError("Neural link disruption. Could not load standings.");
       } finally {
         setIsLoading(false);
       }
@@ -40,84 +40,100 @@ const LeaderboardTable = ({ initialTab = 'overall', initialDomain = '', hideCont
 
   if (isLoading) {
     return (
-      <div className="bg-white dark:bg-slate-800 rounded-3xl border border-sky-100/50 dark:border-slate-700 p-12 text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-500 mx-auto"></div>
-        <p className="mt-4 text-slate-500 font-medium">Loading standings...</p>
+      <div className="glass-card rounded-[40px] border-white/5 p-20 text-center flex flex-col items-center">
+        <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin glow-blue mb-6" />
+        <p className="text-xs font-black uppercase tracking-[0.4em] text-white/20">Syncing Standings...</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-3xl border border-sky-100/50 dark:border-slate-700 shadow-lg overflow-hidden flex flex-col">
+    <div className="glass-card rounded-[40px] border-white/5 overflow-hidden flex flex-col glow-blue">
       {!hideControls && (
-        <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex flex-col md:flex-row items-center justify-between bg-slate-50/50 dark:bg-slate-900/50 gap-4">
-          <div className="relative w-full md:w-64">
-             <span className="absolute inset-y-0 left-3 flex items-center text-slate-400">
-               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-             </span>
-             <input 
-               type="text" 
-               placeholder="Search by name or ID" 
-               value={searchQuery}
-               onChange={(e) => setSearchQuery(e.target.value)}
-               className="w-full pl-9 pr-4 py-2 border-[1.5px] border-slate-200 dark:border-slate-600 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 focus:border-sky-400 focus:ring-[3px] focus:ring-sky-100/50 outline-none shadow-sm transition-all" 
-             />
+        <div className="p-8 border-b border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="relative group w-full md:w-80">
+            <Search className="w-5 h-5 absolute left-5 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors" />
+            <input 
+              type="text" 
+              placeholder="Search nodes by identity..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-14 pr-6 py-4 bg-white/5 border-2 border-white/10 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary/50 focus:bg-white/10 transition-all placeholder:text-white/10" 
+            />
+          </div>
+          <div className="flex items-center gap-3">
+             <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Sort Protocol:</span>
+             <span className="px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-[10px] font-black text-primary uppercase">Rank_Asc</span>
           </div>
         </div>
       )}
       
-      <div className="overflow-x-auto flex-1">
-        <table className="w-full text-left border-collapse whitespace-nowrap">
+      <div className="overflow-x-auto scrollbar-hide">
+        <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
-              <th className="px-5 py-4 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider w-16 text-center">Rank</th>
-              <th className="px-5 py-4 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Intern</th>
-              <th className="px-5 py-4 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center">Domain</th>
-              <th className="px-5 py-4 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-right">Badges</th>
+            <tr className="bg-white/5 border-b border-white/5">
+              <th className="px-8 py-6 text-[10px] font-black text-white/20 uppercase tracking-[0.3em] w-24 text-center">Position</th>
+              <th className="px-8 py-6 text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">Identity</th>
+              <th className="px-8 py-6 text-[10px] font-black text-white/20 uppercase tracking-[0.3em] text-center">Sector</th>
+              <th className="px-8 py-6 text-[10px] font-black text-white/20 uppercase tracking-[0.3em] text-right">Badges</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+          <tbody className="divide-y divide-white/5">
             {filteredInterns.map((intern, index) => (
-              <tr key={intern.uniqueId || index} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
-                <td className="px-5 py-4 text-center align-middle">
+              <tr key={intern.uniqueId || index} className="group hover:bg-white/5 transition-all duration-300">
+                <td className="px-8 py-6 text-center">
                   <div className="flex justify-center">
                     {index === 0 ? (
-                      <div className="w-8 h-8 rounded-lg bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-500 flex items-center justify-center font-black border border-yellow-200 dark:border-yellow-700 shadow-sm">1</div>
+                      <div className="w-10 h-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center font-black text-lg shadow-lg glow-blue border border-primary/30">1</div>
                     ) : index === 1 ? (
-                      <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center font-black border border-slate-300 dark:border-slate-600 shadow-sm">2</div>
+                      <div className="w-10 h-10 rounded-xl bg-accent-cyan/20 text-accent-cyan flex items-center justify-center font-black text-lg shadow-lg glow-cyan border border-accent-cyan/30">2</div>
                     ) : index === 2 ? (
-                      <div className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-500 flex items-center justify-center font-black border border-orange-200 dark:border-orange-700 shadow-sm">3</div>
+                      <div className="w-10 h-10 rounded-xl bg-white/10 text-white flex items-center justify-center font-black text-lg shadow-lg border border-white/20">3</div>
                     ) : (
-                      <span className="font-semibold text-slate-500 dark:text-slate-400 text-sm">{index + 1}</span>
+                      <span className="font-bold text-white/20 group-hover:text-white/40 transition-colors text-lg">{index + 1}</span>
                     )}
                   </div>
                 </td>
-                <td className="px-5 py-4 align-middle">
-                  <div className="flex flex-col gap-1">
-                    <p className="font-bold text-sm text-slate-800 dark:text-slate-200">{intern.name}</p>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest">{intern.uniqueId}</p>
+                <td className="px-8 py-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center font-black text-white/40 group-hover:bg-primary group-hover:text-white transition-all">
+                      {intern.name.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="font-black text-white uppercase tracking-tight group-hover:luminous-text transition-all">{intern.name}</p>
+                      <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">{intern.uniqueId}</p>
+                    </div>
                   </div>
                 </td>
-                <td className="px-5 py-4 align-middle text-center">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400">
+                <td className="px-8 py-6 text-center">
+                    <span className="px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase bg-white/5 border border-white/10 text-white/40 group-hover:text-accent-cyan group-hover:border-accent-cyan/20 transition-all">
                       {intern.domain}
                     </span>
                 </td>
-                <td className="px-5 py-4 align-middle text-right">
-                    <div className="flex items-center justify-end gap-1.5 font-black text-slate-700 dark:text-slate-200">
-                        {intern.badgesEarned}
-                        <span className="text-amber-500">🏆</span>
+                <td className="px-8 py-6 text-right">
+                    <div className="flex items-center justify-end gap-3 font-black text-white group-hover:text-primary transition-colors">
+                        <span className="text-xl">{intern.badgesEarned}</span>
+                        <Trophy className={`w-5 h-5 transition-all ${index < 3 ? "text-primary" : "text-white/10 group-hover:text-primary"}`} />
                     </div>
                 </td>
               </tr>
             ))}
             
             {(filteredInterns.length === 0 && !error) && (
-                <tr><td colSpan="4" className="text-center py-10 text-slate-500 dark:text-slate-400">No interns found.</td></tr>
+                <tr>
+                  <td colSpan="4" className="text-center py-20">
+                    <Activity className="w-12 h-12 text-white/5 mx-auto mb-4" />
+                    <p className="text-xs font-black uppercase tracking-[0.2em] text-white/20">No matching nodes found in sector.</p>
+                  </td>
+                </tr>
             )}
 
             {error && (
-                <tr><td colSpan="4" className="text-center py-10 text-red-500 font-bold">{error}</td></tr>
+                <tr>
+                  <td colSpan="4" className="text-center py-20 text-red-500/50 font-black uppercase tracking-widest text-xs">
+                    {error}
+                  </td>
+                </tr>
             )}
           </tbody>
         </table>

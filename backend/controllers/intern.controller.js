@@ -19,6 +19,15 @@ export const startQuiz = async (req, res) => {
       return res.status(404).json({ message: "❌ Contest not found." });
     }
 
+    // 1b. Domain Match Check
+    const internDomain = (req.user.domain || "").trim().toUpperCase();
+    const contestDomain = (contest.domain || "").trim().toUpperCase();
+    if (internDomain !== contestDomain) {
+      return res.status(403).json({
+        message: "❌ Access denied: You can only attempt quizzes in your own domain.",
+      });
+    }
+
     // 2. Check Timing
     const now = new Date();
     if (now < contest.startTime) {
@@ -82,6 +91,15 @@ export const submitQuiz = async (req, res) => {
     const contest = await Contest.findOne({ contestId });
     if (!contest) {
       return res.status(404).json({ message: "❌ Contest not found." });
+    }
+
+    // 1b. Domain Match Check
+    const internDomain = (req.user.domain || "").trim().toUpperCase();
+    const contestDomain = (contest.domain || "").trim().toUpperCase();
+    if (internDomain !== contestDomain) {
+      return res.status(403).json({
+        message: "❌ Access denied: You cannot submit answers for a different domain.",
+      });
     }
 
     const now = new Date();
@@ -183,6 +201,7 @@ export const getInternHistory = async (req, res) => {
     // Fetch all results for the logged-in intern from Attempt model
     const history = await Attempt.find({ internId: internUniqueId, isSubmitted: true })
       .populate("contestId", "contestTitle description")
+      .populate("answers.questionId", "questionText")
       .sort({ createdAt: -1 });
 
     res.status(200).json({

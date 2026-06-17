@@ -1,228 +1,315 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { apiCall } from "../utils/api";
+import { 
+  Trophy, 
+  Zap, 
+  Star, 
+  Activity, 
+  Shield, 
+  Award, 
+  BarChart3, 
+  ChevronRight,
+  TrendingUp,
+  BrainCircuit,
+  Layers,
+  Users,
+  PlusCircle,
+  Upload
+} from "lucide-react";
+import Badge1st from '../assets/1st.png';
+import Badge2nd from '../assets/2nd.png';
+import Badge3rd from '../assets/3rd.png';
 
-const MOCK_DOMAIN_DATA = {
-  "c++": [
-    { rank: 1, name: "Arden Cho", email: "arden@athenura.com", score: 980, timeTaken: 120, badges: 4 },
-    { rank: 2, name: "Marcus Vane", email: "marcus@athenura.com", score: 955, timeTaken: 145, badges: 3 },
-    { rank: 3, name: "Sela Ward", email: "sela@athenura.com", score: 920, timeTaken: 160, badges: 2 },
-    { rank: 4, name: "Kenji Sato", email: "kenji@athenura.com", score: 890, timeTaken: 180, badges: 1 },
-  ],
-  "frontend": [
-    { rank: 1, name: "Kelly Kapoor", email: "kelly@athenura.com", score: 995, timeTaken: 110, badges: 5 },
-    { rank: 2, name: "Jim Halpert", email: "jim@athenura.com", score: 960, timeTaken: 130, badges: 3 },
-    { rank: 3, name: "Pam Beesly", email: "pam@athenura.com", score: 940, timeTaken: 140, badges: 2 },
-  ],
-  "backend": [
-    { rank: 1, name: "Dwight Schrute", email: "dwight@athenura.com", score: 990, timeTaken: 115, badges: 4 },
-    { rank: 2, name: "Angela Martin", email: "angela@athenura.com", score: 975, timeTaken: 125, badges: 3 },
-  ]
-};
+const domains = [
+  "Overall Ranking",
+  "Data Science & Analytics", 
+  "Frontend Developer", 
+  "Backend Developer", 
+  "Machine Learning", 
+  "Cyber Security",
+  "Full Stack Development"
+];
 
 export default function DomainReport() {
+  const navigate = useNavigate();
   const [data, setData] = useState([]);
-  const [domain, setDomain] = useState("Data Science & Analytics");
+  const [domain, setDomain] = useState("Overall Ranking");
   const [loading, setLoading] = useState(false);
   const [useBackup, setUseBackup] = useState(false);
+  const [stats, setStats] = useState({
+     totalInternsRanked: 0,
+     totalBadgesDistributed: 0,
+     averageScore: 0,
+     currentMonthChampions: 0
+  });
 
-  const fetchLeaderboard = async () => {
+  const fetchStatsAndLeaderboard = async () => {
     setLoading(true);
     setUseBackup(false);
     try {
-      const result = await apiCall(`/leaderboard/domain/${encodeURIComponent(domain)}`);
-      
-      if (result.success && result.data && result.data.length > 0) {
-        setData(result.data);
+      // 1. Fetch Stats
+      const statsRes = await apiCall("/leaderboard/stats");
+      if (statsRes && statsRes.success) {
+         setStats(statsRes.data);
+      }
+
+      // 2. Fetch Leaderboard
+      let result;
+      if (domain === "Overall Ranking") {
+         result = await apiCall("/leaderboard/overall");
       } else {
-        // Fallback to mock data for visualization if backend is empty
-        setData(MOCK_DOMAIN_DATA[domain.toLowerCase()] || []);
-        setUseBackup(true);
+         result = await apiCall(`/leaderboard/domain/${encodeURIComponent(domain)}`);
+      }
+      
+      if (result.success) {
+        setData(result.data || []);
+      } else {
+        setData([]);
       }
     } catch (err) {
-      console.error("Fetch error:", err);
-      setData(MOCK_DOMAIN_DATA[domain.toLowerCase()] || []);
-      setUseBackup(true);
+      setData([]);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
-    fetchLeaderboard();
+    fetchStatsAndLeaderboard();
   }, [domain]);
 
   const topThree = useMemo(() => data.slice(0, 3), [data]);
   const others = useMemo(() => data.slice(3), [data]);
 
-  const domainThemes = {
-    "data science & analytics": "from-blue-600 to-indigo-700 shadow-blue-500/20",
-    "human resources": "from-rose-500 to-pink-700 shadow-rose-500/20",
-    "application development": "from-sky-500 to-blue-700 shadow-sky-500/20",
-    "social media management": "from-purple-500 to-indigo-700 shadow-purple-500/20",
-    "graphic design": "from-amber-400 to-orange-600 shadow-amber-500/20",
-    "digital marketing": "from-emerald-500 to-teal-700 shadow-emerald-500/20",
-    "video editing": "from-red-500 to-orange-700 shadow-red-500/20",
-    "full stack development": "from-indigo-600 to-violet-800 shadow-indigo-500/20",
-    "mern stack development": "from-green-600 to-emerald-800 shadow-green-500/20",
-    "content writing": "from-slate-600 to-slate-800 shadow-slate-500/20",
-    "content creator": "from-cyan-500 to-blue-700 shadow-cyan-500/20",
-    "ui/ux designing": "from-fuchsia-500 to-purple-700 shadow-fuchsia-500/20",
-    "front-end developer": "from-sky-400 to-blue-600 shadow-sky-500/20",
-    "back-end developer": "from-teal-600 to-emerald-800 shadow-teal-500/20"
-  };
-
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-10 font-sans transition-colors duration-500">
-      
-      {/* Header Section */}
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center mb-12 gap-6">
-        <div className="flex items-center gap-4">
-           <div className={`p-4 rounded-2xl bg-gradient-to-br ${domainThemes[domain.toLowerCase()] || domainThemes["c++"]} text-white shadow-lg`}>
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-           </div>
-           <div>
-              <h1 className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
-                {domain.toUpperCase()} <span className="text-slate-400 font-medium">Rankings</span>
-              </h1>
-              <p className="text-slate-500 dark:text-slate-400 font-medium text-sm mt-1">Platform-wide top performers in specialized domains.</p>
-           </div>
+    <div className="space-y-12 animate-fade-in pb-10">
+      {/* Header section */}
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-8">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+             Analytics Dashboard
+          </h1>
+          <p className="text-slate-500 font-medium">Monitor active users, domain performance, and system metrics.</p>
         </div>
 
-        <div className="flex items-center gap-3 bg-white dark:bg-slate-800 p-2 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
-           <div className="flex flex-wrap items-center justify-center md:justify-end gap-2 max-w-2xl px-2">
-             {["Data Science & Analytics", "Human Resources", "Application Development", "Social Media Management", "Graphic Design", "Digital Marketing", "Video Editing", "Full Stack Development", "MERN Stack Development", "Content Writing", "Content Creator", "UI/UX Designing", "Front-end Developer", "Back-end Developer"].map((d) => (
-               <button
-                 key={d}
-                 onClick={() => setDomain(d)}
-                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-                   domain === d
-                     ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-md"
-                     : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700"
-                 }`}
-               >
-                 {d}
-               </button>
-             ))}
-           </div>
+        {/* Quick Action Buttons */}
+        <div className="flex flex-wrap items-center gap-3">
+           <button 
+             onClick={() => navigate('/create-contest')}
+             className="px-5 py-2.5 bg-blue-600 text-white font-semibold text-sm rounded-xl flex items-center gap-2 hover:bg-blue-700 transition-colors shadow-sm"
+           >
+              <PlusCircle className="w-4 h-4" />
+              Publish Quiz
+           </button>
+           <button 
+             onClick={() => navigate('/upload-interns')}
+             className="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 font-semibold text-sm rounded-xl flex items-center gap-2 hover:bg-slate-50 transition-colors shadow-sm"
+           >
+              <Upload className="w-4 h-4" />
+              Bulk Import
+           </button>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto">
-        {/* Loading State */}
+      {/* Real-time Telemetry Stats Row */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+         {[
+           { label: "Active Interns", val: stats.totalInternsRanked, icon: <Users className="w-5 h-5 text-blue-600" />, bg: "bg-blue-50" },
+           { label: "Badges Issued", val: stats.totalBadgesDistributed, icon: <Award className="w-5 h-5 text-purple-600" />, bg: "bg-purple-50" },
+           { label: "Avg Skill Accuracy", val: `${stats.averageScore}%`, icon: <Activity className="w-5 h-5 text-emerald-600" />, bg: "bg-emerald-50" },
+           { label: "Sector Champions", val: stats.currentMonthChampions, icon: <Trophy className="w-5 h-5 text-amber-600" />, bg: "bg-amber-50" },
+         ].map((tile, idx) => (
+            <div 
+              key={idx}
+              className="bg-white p-6 rounded-2xl border border-slate-200 flex flex-col justify-between h-[140px] shadow-sm"
+            >
+               <div className="flex justify-between items-start">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{tile.label}</span>
+                  <div className={`p-2 rounded-lg ${tile.bg}`}>
+                     {tile.icon}
+                  </div>
+               </div>
+               <h3 className="text-3xl font-bold text-slate-900 tracking-tight">{tile.val}</h3>
+            </div>
+         ))}
+      </div>
+
+      {/* Sector filter tabs */}
+      <div className="space-y-4">
+         <h3 className="text-sm font-bold text-slate-900">Filter by Domain</h3>
+         <div className="flex flex-wrap gap-2">
+            {domains.map((d) => (
+              <button
+                key={d}
+                onClick={() => setDomain(d)}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors
+                  ${domain === d
+                    ? "bg-slate-900 text-white shadow-sm"
+                    : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                  }`}
+              >
+                {d}
+              </button>
+            ))}
+         </div>
+      </div>
+
+      {/* Main leader standings visualizer */}
+      <div className="relative">
         <AnimatePresence mode="wait">
           {loading ? (
             <motion.div 
+              key="loading"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center py-20"
+              className="py-32 flex flex-col items-center justify-center gap-4"
             >
-              <div className="w-12 h-12 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-              <p className="text-slate-500 font-bold animate-pulse">Calculating rankings...</p>
+              <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin" />
+              <p className="text-sm font-medium text-slate-500">Loading domain data...</p>
             </motion.div>
           ) : data.length === 0 ? (
             <motion.div 
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-              className="text-center py-20 bg-white dark:bg-slate-800 rounded-[3rem] border-2 border-dashed border-slate-200 dark:border-slate-700"
+              key="empty"
+              initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+              className="py-24 bg-white rounded-3xl border border-slate-200 border-dashed text-center shadow-sm"
             >
-               <div className="text-6xl mb-6">🏆</div>
-               <h2 className="text-2xl font-black text-slate-800 dark:text-white">Ready for Kickoff!</h2>
-               <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto mt-2">
-                 No competition data found for this domain yet. Be the first to take a quiz and claim the #1 spot!
+               <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <Shield className="w-8 h-8 text-slate-400" />
+               </div>
+               <h2 className="text-xl font-bold text-slate-900 mb-2">No Active Submissions</h2>
+               <p className="text-slate-500 font-medium max-w-sm mx-auto">
+                  The {domain} domain currently has no active interns. Use bulk import to onboard users.
                </p>
             </motion.div>
           ) : (
-            <div className="space-y-12">
-              {/* Podium View (Top 3) */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end">
-                {topThree.map((user, index) => {
-                  const rankStyles = [
-                    { order: "md:order-2", card: "bg-gradient-to-b from-yellow-50 to-white dark:from-yellow-900/20 dark:to-slate-800 border-yellow-200 dark:border-yellow-700 h-[320px]", icon: "bg-yellow-400", emoji: "👑" },
-                    { order: "md:order-1", card: "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 h-[260px]", icon: "bg-slate-400", emoji: "🥈" },
-                    { order: "md:order-3", card: "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 h-[220px]", icon: "bg-orange-400", emoji: "🥉" }
-                  ][index];
+            <motion.div 
+              key="content"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              className="space-y-12"
+            >
+              {/* Podium View */}
+              {topThree.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end pt-8 max-w-4xl mx-auto">
+                   {topThree[1] && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                        className="w-full bg-white border border-slate-200 shadow-sm rounded-3xl p-6 flex flex-col items-center text-center cursor-pointer group hover:shadow-md transition-all h-[260px] md:order-1"
+                      >
+                         <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">2nd Place</span>
+                         <img src={Badge2nd} alt="Silver" className="w-16 h-16 object-contain mb-4" />
+                         <h3 className="text-base font-bold text-slate-900 truncate w-full">{topThree[1].name}</h3>
+                         <p className="text-xs font-medium text-slate-500 mt-1">{topThree[1].domain}</p>
+                         <div className="mt-auto pt-4 border-t border-slate-100 w-full flex justify-between items-center px-4 text-sm font-bold">
+                            <span className="text-slate-700">{topThree[1].totalScore || 0} pts</span>
+                            <span className="text-amber-500">{topThree[1].badgesEarned} badges</span>
+                         </div>
+                      </motion.div>
+                   )}
 
-                  return (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className={`relative p-8 rounded-[2.5rem] border shadow-xl flex flex-col items-center justify-center text-center ${rankStyles.card} ${rankStyles.order} group hover:-translate-y-2 transition-all duration-300`}
-                    >
-                      <div className={`absolute -top-6 w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-lg border-4 border-white dark:border-slate-900 ${rankStyles.icon}`}>
-                         {rankStyles.emoji}
-                      </div>
-                      
-                      <div className="mb-4">
-                         <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-2xl mb-3 font-black text-slate-400 mx-auto border-2 border-white dark:border-slate-600">
-                            {user.name.charAt(0)}
+                   {topThree[0] && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 25 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="w-full bg-white border-2 border-amber-300 shadow-lg rounded-3xl p-8 flex flex-col items-center text-center cursor-pointer group hover:-translate-y-2 transition-all h-[300px] z-10 md:order-2"
+                      >
+                         <span className="text-xs font-bold text-amber-500 uppercase tracking-wider mb-4">1st Place</span>
+                         <img src={Badge1st} alt="Gold" className="w-20 h-20 object-contain mb-4" />
+                         <h3 className="text-lg font-bold text-slate-900 truncate w-full">{topThree[0].name}</h3>
+                         <p className="text-xs font-medium text-slate-500 mt-1">{topThree[0].domain}</p>
+                         <div className="mt-auto pt-4 border-t border-slate-100 w-full flex justify-between items-center px-4 text-base font-bold">
+                            <span className="text-slate-900">{topThree[0].totalScore || 0} pts</span>
+                            <span className="text-amber-600">{topThree[0].badgesEarned} badges</span>
                          </div>
-                         <h2 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">{user.name}</h2>
-                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-none mt-1">{(user.email || user.uniqueId || '').split('@')[0]}</p>
-                      </div>
+                      </motion.div>
+                   )}
 
-                      <div className="w-full flex justify-around items-center pt-6 border-t border-slate-100 dark:border-slate-700/50">
-                         <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Score</p>
-                            <p className="text-xl font-black text-slate-900 dark:text-white">{user.score || user.totalScore}</p>
+                   {topThree[2] && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                        className="w-full bg-white border border-slate-200 shadow-sm rounded-3xl p-6 flex flex-col items-center text-center cursor-pointer group hover:shadow-md transition-all h-[240px] md:order-3"
+                      >
+                         <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">3rd Place</span>
+                         <img src={Badge3rd} alt="Bronze" className="w-14 h-14 object-contain mb-4" />
+                         <h3 className="text-base font-bold text-slate-900 truncate w-full">{topThree[2].name}</h3>
+                         <p className="text-xs font-medium text-slate-500 mt-1">{topThree[2].domain}</p>
+                         <div className="mt-auto pt-4 border-t border-slate-100 w-full flex justify-between items-center px-4 text-sm font-bold">
+                            <span className="text-slate-700">{topThree[2].totalScore || 0} pts</span>
+                            <span className="text-amber-500">{topThree[2].badgesEarned} badges</span>
                          </div>
-                         <div className="w-px h-6 bg-slate-100 dark:bg-slate-700"></div>
-                         <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Avg</p>
-                            <p className="text-sm font-bold text-slate-800 dark:text-slate-300">{user.timeTaken || user.badges} {user.timeTaken ? 's' : '🏆'}</p>
-                         </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-
-              {/* Others Table */}
-              {others.length > 0 && (
-                <div className="space-y-4">
-                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.3em] ml-4 mb-4">Champion Ranks</h3>
-                  {others.map((user, idx) => (
-                    <motion.div
-                      key={idx}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="flex items-center justify-between p-6 bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700/50 shadow-sm hover:shadow-md transition-shadow group"
-                    >
-                      <div className="flex items-center gap-6">
-                        <span className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-900 flex items-center justify-center font-black text-slate-400">
-                          #{idx + 4}
-                        </span>
-                        <div>
-                          <p className="font-black text-slate-800 dark:text-white tracking-tight">{user.name}</p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{user.email}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-8">
-                         <div className="text-right">
-                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Metrics</p>
-                           <p className="text-lg font-black text-slate-800 dark:text-white">{user.score || user.totalScore}</p>
-                         </div>
-                         <div className="w-10 h-10 rounded-full bg-sky-50 dark:bg-sky-900/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <svg className="w-5 h-5 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
-                            </svg>
-                         </div>
-                      </div>
-                    </motion.div>
-                  ))}
+                      </motion.div>
+                   )}
                 </div>
               )}
-            </div>
+
+              {/* Table standing roster */}
+              {others.length > 0 && (
+                <div className="space-y-4 pt-6">
+                   <div className="flex items-center gap-4 px-2">
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Other Standings</span>
+                      <div className="flex-1 h-px bg-slate-200" />
+                   </div>
+
+                   <div className="space-y-3">
+                      {others.map((u, i) => {
+                        const rank = i + 4;
+                        return (
+                          <motion.div
+                            key={i}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.1 + (i * 0.05) }}
+                            className="bg-white rounded-2xl p-4 md:p-5 flex items-center justify-between gap-6 hover:shadow-md transition-shadow cursor-pointer border border-slate-200"
+                          >
+                             <div className="flex items-center gap-6 flex-1">
+                                 <div className="w-10 h-10 shrink-0 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center font-bold text-sm text-slate-500">
+                                    #{rank}
+                                 </div>
+                                 <div className="flex-1 min-w-0">
+                                   <div className="flex items-center gap-3">
+                                      <h3 className="text-base font-bold text-slate-900 truncate">
+                                         {u.name}
+                                      </h3>
+                                   </div>
+                                   <div className="flex items-center gap-3 mt-1">
+                                      <span className="text-xs font-medium text-slate-500">{u.uniqueId}</span>
+                                      <span className="w-1 h-1 bg-slate-300 rounded-full" />
+                                      <span className="text-xs font-semibold text-blue-600">{u.domain}</span>
+                                   </div>
+                                 </div>
+
+                                 <div className="hidden md:flex items-center gap-8 text-center mr-6">
+                                     <div className="space-y-1">
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Points</p>
+                                        <p className="text-base font-bold text-slate-900">{u.score || u.totalScore || 0}</p>
+                                     </div>
+                                     <div className="space-y-1">
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Badges</p>
+                                        <p className="text-base font-bold text-amber-500">{u.badgesEarned !== undefined ? u.badgesEarned : u.badges || 0}</p>
+                                     </div>
+                                 </div>
+                             </div>
+
+                             <button className="hidden sm:flex w-10 h-10 rounded-xl bg-slate-50 hover:bg-slate-100 items-center justify-center text-slate-400 transition-colors">
+                                <ChevronRight className="w-5 h-5" />
+                             </button>
+                          </motion.div>
+                        );
+                      })}
+                   </div>
+                </div>
+              )}
+            </motion.div>
           )}
         </AnimatePresence>
 
         {useBackup && (
-           <div className="mt-12 p-4 bg-amber-50 dark:bg-amber-900/10 rounded-2xl border border-amber-100 dark:border-amber-800/30 text-center">
-              <p className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest">
-                 ⚡ Technical Note: Showing Preview Data while your database is populating
-              </p>
+           <div className="mt-12 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-center gap-2 text-amber-700">
+              <BrainCircuit className="w-4 h-4" />
+              <p className="text-sm font-semibold">Displaying simulated data (API connection failed)</p>
            </div>
         )}
       </div>

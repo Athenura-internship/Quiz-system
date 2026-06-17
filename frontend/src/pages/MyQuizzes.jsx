@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiCall } from '../utils/api';
+import { 
+  History, ChevronRight, CheckCircle2, XCircle, FileText,
+  Search, Printer, X, Clock, Target
+} from 'lucide-react';
 
 const MyQuizzes = () => {
-  const [user, setUser] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedQuiz, setSelectedQuiz] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedResult, setSelectedResult] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
@@ -18,19 +22,9 @@ const MyQuizzes = () => {
   const fetchHistory = async () => {
     try {
       const data = await apiCall("/quiz/history");
-      // Map API data to frontend format
-      const formattedHistory = data.history.map(attempt => ({
-        id: attempt._id,
-        contestTitle: attempt.contestId?.contestTitle || 'Unknown Contest',
-        domain: attempt.domain,
-        score: attempt.score,
-        totalQuestions: attempt.totalQuestions,
-        percentage: Math.round((attempt.score / attempt.totalQuestions) * 100),
-        timeTaken: attempt.timeTaken || 'N/A',
-        date: new Date(attempt.endTime).toISOString().split('T')[0],
-        description: attempt.contestId?.description || 'No description available.',
-      }));
-      setHistory(formattedHistory);
+      if (data.success) {
+        setHistory(data.history || []);
+      }
     } catch (error) {
       console.error("Failed to fetch history:", error);
     } finally {
@@ -38,222 +32,265 @@ const MyQuizzes = () => {
     }
   };
 
-  // Filter by user's domain and search term
-  const userDomain = user?.domain?.trim().toUpperCase() || 'FRONTEND';
-  const filteredHistory = history.filter(item => {
-    const matchesDomain = item.domain === userDomain;
-    const matchesSearch = item.contestTitle.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesDomain && matchesSearch;
-  });
-
-  const stats = {
-    total: filteredHistory.length,
-    avgScore: filteredHistory.length > 0 
-      ? Math.round(filteredHistory.reduce((acc, curr) => acc + curr.percentage, 0) / filteredHistory.length)
-      : 0
+  const getPerformanceColor = (score) => {
+    if (score >= 90) return "text-emerald-600 bg-emerald-50 border-emerald-200";
+    if (score >= 75) return "text-blue-600 bg-blue-50 border-blue-200";
+    if (score >= 55) return "text-amber-600 bg-amber-50 border-amber-200";
+    return "text-red-600 bg-red-50 border-red-200";
   };
 
+  const filteredHistory = history.filter(item => {
+    const title = item.contestId?.contestTitle || "Assessment";
+    const domain = item.domain || "General";
+    return title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+           domain.toLowerCase().includes(searchTerm.toLowerCase());
+  });
+
+  const handlePrintResult = (item) => {
+    const scorePct = Math.round((item.score / item.totalQuestions) * 100);
+    const printWindow = window.open('', '_blank');
+    const content = `
+      <html>
+        <head>
+          <title>Result Transcript - ${item.contestId?.contestTitle}</title>
+          <style>
+            body { font-family: 'Inter', sans-serif; background-color: #ffffff; padding: 50px; color: #0f172a; }
+            .badge { display: inline-block; padding: 6px 12px; font-size: 12px; font-weight: 600; border-radius: 6px; background: #f1f5f9; color: #475569; }
+            .header { border-bottom: 2px solid #f1f5f9; padding-bottom: 24px; margin-bottom: 45px; }
+            .title { font-size: 28px; font-weight: 800; margin: 10px 0; }
+            .score-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 30px; margin-bottom: 40px; display: grid; grid-template-cols: repeat(4, 1fr); gap: 20px; }
+            .metric { text-align: center; }
+            .metric-val { font-size: 24px; font-weight: 800; margin: 0 0 5px 0; color: #2563eb; }
+            .metric-lbl { font-size: 12px; font-weight: 600; color: #64748b; }
+            .answers-list { border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; margin-top: 40px; }
+            .answer-row { display: flex; justify-content: space-between; padding: 16px; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+            .answer-row:last-child { border: none; }
+            .correct { color: #10b981; font-weight: 600; }
+            .incorrect { color: #ef4444; font-weight: 600; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <span class="badge">${item.domain || 'General'}</span>
+            <h1 class="title">${item.contestId?.contestTitle || 'Assessment Module'}</h1>
+            <p><strong>Attempt Date:</strong> ${new Date(item.createdAt).toLocaleString()}</p>
+          </div>
+          <div class="score-card">
+            <div class="metric"><p class="metric-val">${scorePct}%</p><p class="metric-lbl">Score</p></div>
+            <div class="metric"><p class="metric-val">${item.score}</p><p class="metric-lbl">Correct</p></div>
+            <div class="metric"><p class="metric-val">${item.totalQuestions}</p><p class="metric-lbl">Total Questions</p></div>
+            <div class="metric"><p class="metric-val">${Math.floor(item.timeTaken / 60)}m ${item.timeTaken % 60}s</p><p class="metric-lbl">Duration</p></div>
+          </div>
+          <h3>Question Breakdown</h3>
+          <div class="answers-list">
+             ${(item.answers || []).map((ans, idx) => `
+                <div class="answer-row">
+                   <div>
+                     <p style="margin: 0 0 4px 0; font-weight: 600;">Q${idx + 1}: ${ans.questionId?.questionText || `Question ${idx + 1}`}</p>
+                     <p style="margin: 0; color: #64748b;">Answer: ${ans.selectedAnswer || 'Skipped'}</p>
+                   </div>
+                   <span class="${ans.isCorrect ? 'correct' : 'incorrect'}">${ans.isCorrect ? 'Correct' : 'Incorrect'}</span>
+                </div>
+             `).join('')}
+          </div>
+          <script>window.print();</script>
+        </body>
+      </html>
+    `;
+    printWindow.document.write(content);
+    printWindow.document.close();
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-6">
+        <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin" />
+        <p className="text-sm font-semibold text-slate-500">Loading History...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="w-full h-full p-4 sm:p-6 lg:p-8 font-sans overflow-x-hidden relative">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-5xl mx-auto bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-200/80 dark:border-slate-700/50 p-8 md:p-10 transition-colors duration-300"
-      >
-        {/* Header & Stats */}
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-10">
-          <div>
-            <h1 className="text-4xl font-black bg-gradient-to-r from-sky-600 to-indigo-600 bg-clip-text text-transparent mb-2 tracking-tight">
-              My Quizzes
-            </h1>
-            <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">
-              Review your performance across domain specializations
-            </p>
-          </div>
-          
-          <div className="flex gap-4 w-full lg:w-auto">
-            <div className="flex-1 lg:w-36 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700/50 text-center">
-              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Quizzes Given</p>
-              <p className="text-2xl font-black text-sky-500">{stats.total}</p>
-            </div>
-            <div className="flex-1 lg:w-36 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700/50 text-center">
-              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Avg. Accuracy</p>
-              <p className="text-2xl font-black text-emerald-500">{stats.avgScore}%</p>
-            </div>
-          </div>
+    <div className="space-y-8 animate-fade-in pb-20">
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+             Evaluation History
+          </h1>
+          <p className="text-slate-500 font-medium mt-2">Review your past assessments and results.</p>
         </div>
 
-        {/* Search */}
-        <div className="relative w-full mb-8">
+        <div className="relative group w-full lg:w-80">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
           <input
             type="text"
-            placeholder="Search by quiz title..."
+            placeholder="Search assessments..."
+            className="w-full h-12 pl-11 pr-4 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:border-blue-500 outline-none transition-all shadow-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/80 border-2 border-slate-100 dark:border-slate-700/50 rounded-2xl focus:border-sky-400 focus:ring-4 focus:ring-sky-100/50 dark:focus:ring-sky-900/20 transition-all text-slate-800 dark:text-slate-100 placeholder-slate-400 font-medium"
           />
-          <svg className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
         </div>
+      </div>
 
-        {/* History Cards */}
-        <div className="flex flex-col gap-5 pb-4">
-          {filteredHistory.length > 0 ? (
-            filteredHistory.map((item, idx) => (
-              <motion.div
-                key={item.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: idx * 0.1 }}
-                onClick={() => setSelectedQuiz(item)}
-                className="group w-full bg-slate-50/50 dark:bg-slate-900/40 rounded-[2rem] p-6 border border-slate-200/60 dark:border-slate-700/50 hover:shadow-xl hover:shadow-sky-500/5 transition-all duration-300 cursor-pointer"
-              >
-                <div className="flex flex-col xl:flex-row items-center justify-between gap-6 w-full">
-                  <div className="flex-1 w-full flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-10">
-                    <div className="w-full md:min-w-[220px]">
-                      <span className="px-3 py-1 bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 text-[10px] font-black uppercase tracking-widest rounded-full mb-3 inline-block">
-                        {item.domain}
-                      </span>
-                      <h3 className="text-xl font-bold text-slate-800 dark:text-white group-hover:text-sky-500 transition-colors truncate">
-                        {item.contestTitle}
-                      </h3>
-                    </div>
+      <div className="space-y-4">
+         {filteredHistory.length > 0 ? (
+           filteredHistory.map((item, index) => {
+             const scorePct = Math.round((item.score / item.totalQuestions) * 100);
+             return (
+               <motion.div
+                 key={item._id}
+                 initial={{ opacity: 0, y: 10 }}
+                 animate={{ opacity: 1, y: 0 }}
+                 transition={{ delay: index * 0.03 }}
+                 className="bg-white rounded-3xl border border-slate-200 p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 hover:shadow-md transition-shadow"
+               >
+                 <div className="flex items-center gap-6 flex-1 w-full">
+                   <div className={`w-20 h-20 shrink-0 rounded-2xl border flex flex-col items-center justify-center ${getPerformanceColor(scorePct)}`}>
+                       <span className="text-2xl font-bold leading-none">{item.score}</span>
+                       <span className="text-[10px] font-semibold uppercase tracking-wider mt-1 opacity-80">/ {item.totalQuestions}</span>
+                   </div>
 
-                    <div className="flex flex-wrap md:flex-nowrap items-center gap-6 xl:gap-8 w-full border-t md:border-t-0 md:border-l border-slate-200 dark:border-slate-700/50 pt-4 md:pt-0 md:pl-6 xl:pl-8">
-                       <div className="flex flex-col gap-1 w-[45%] md:w-auto">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Date & Time</p>
-                        <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{item.date}</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">10:00 AM</p>
-                      </div>
-
-                      <div className="flex flex-col gap-1 w-[45%] md:w-auto md:border-l border-slate-200 dark:border-slate-700/50 md:pl-6 xl:pl-8">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Spent</p>
-                        <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{item.timeTaken} s</p>
-                      </div>
-
-                      <div className="flex flex-col gap-1 w-[45%] md:w-auto md:border-l border-slate-200 dark:border-slate-700/50 md:pl-6 xl:pl-8">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</p>
-                        <div className="flex items-center gap-2">
-                           <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                           <span className="text-sm font-bold text-emerald-600 dark:text-emerald-500">Completed</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="w-full xl:w-auto shrink-0 border-t xl:border-none border-slate-200 dark:border-slate-700/50 pt-5 xl:pt-0 flex flex-col items-center">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setSelectedQuiz(item); }}
-                      className="w-full xl:w-[150px] px-6 py-3 bg-emerald-50 hover:bg-emerald-500 text-emerald-700 hover:text-white dark:bg-emerald-900/40 dark:text-emerald-400 dark:hover:bg-emerald-500 font-bold rounded-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-sm border border-emerald-100 dark:border-emerald-800/50"
-                    >
-                      View Result
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            ))
-          ) : (
-            <div className="py-20 bg-slate-50/50 dark:bg-slate-900/30 rounded-[2.5rem] border-2 border-dashed border-slate-200 dark:border-slate-700 text-center">
-               <p className="text-xl font-bold text-slate-400">{loading ? 'Loading results...' : 'No quizzes found.'}</p>
-            </div>
-          )}
-        </div>
-      </motion.div>
-
-
-      {/* POPUP MODAL */}
-      <AnimatePresence>
-        {selectedQuiz && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {/* Backdrop */}
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedQuiz(null)}
-              className="absolute inset-0 bg-slate-900/40 dark:bg-black/80 backdrop-blur-sm"
-            />
-            
-            {/* Modal Content */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
-            >
-              {/* Top Banner */}
-              <div className="h-32 bg-gradient-to-r from-sky-500 to-indigo-600 relative p-8">
-                 <button 
-                   onClick={() => setSelectedQuiz(null)}
-                   className="absolute top-6 right-6 p-2 bg-white/20 hover:bg-white/30 rounded-xl text-white transition-colors"
-                 >
-                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                 </button>
-                 <div className="absolute -bottom-10 left-8 px-6 py-4 bg-white dark:bg-slate-800 rounded-3xl shadow-xl border-4 border-white dark:border-slate-900 flex items-center gap-3">
-                    <span className={`text-4xl font-black ${selectedQuiz.percentage >= 80 ? 'text-emerald-500' : 'text-amber-500'}`}>
-                      {selectedQuiz.percentage}%
-                    </span>
-                    <div className="h-8 w-px bg-slate-100 dark:bg-slate-700"></div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-tight">Overall<br/>Accuracy</p>
+                   <div className="flex-1 min-w-0">
+                     <span className="px-2 py-1 rounded bg-slate-100 text-xs font-semibold text-slate-600 mb-2 inline-block">
+                       {item.domain || "Assessment"}
+                     </span>
+                     <h3 className="text-lg font-bold text-slate-900 truncate">
+                       {item.contestId?.contestTitle || "Assessment Module"}
+                     </h3>
+                     <div className="flex items-center gap-4 mt-2 text-xs font-medium text-slate-500">
+                        <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> {new Date(item.createdAt).toLocaleDateString()}</span>
+                        <span className="w-1 h-1 bg-slate-300 rounded-full" />
+                        <span>{Math.floor(item.timeTaken / 60)}m {item.timeTaken % 60}s</span>
+                     </div>
+                   </div>
                  </div>
-              </div>
 
-              <div className="p-10 pt-16">
-                <div className="flex justify-between items-start mb-8">
+                 <div className="flex items-center gap-3 w-full md:w-auto">
+                    <button 
+                      onClick={() => handlePrintResult(item)}
+                      className="h-12 w-12 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-center text-slate-500 transition-colors shrink-0"
+                    >
+                       <Printer className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setSelectedResult(item)}
+                      className="flex-1 md:w-32 h-12 bg-white border border-slate-200 text-slate-700 font-semibold text-sm rounded-xl hover:bg-slate-50 transition-colors shadow-sm flex items-center justify-center gap-2"
+                    >
+                      View Details
+                    </button>
+                 </div>
+               </motion.div>
+             );
+           })
+         ) : (
+           <div className="py-20 text-center bg-white rounded-3xl border border-slate-200 border-dashed shadow-sm">
+              <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                 <FileText className="w-8 h-8 text-slate-400" />
+              </div>
+              <p className="text-sm font-semibold text-slate-500">No past assessments found.</p>
+           </div>
+         )}
+      </div>
+
+      <AnimatePresence>
+        {selectedResult && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+             <motion.div 
+               initial={{ opacity: 0 }}
+               animate={{ opacity: 1 }}
+               exit={{ opacity: 0 }}
+               onClick={() => setSelectedResult(null)}
+               className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+             />
+             
+             <motion.div
+               initial={{ opacity: 0, scale: 0.95, y: 20 }}
+               animate={{ opacity: 1, scale: 1, y: 0 }}
+               exit={{ opacity: 0, scale: 0.95, y: 20 }}
+               className="relative w-full max-w-2xl bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col max-h-[85vh]"
+             >
+                <div className="p-8 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
                    <div>
-                     <h2 className="text-3xl font-black text-slate-800 dark:text-white mb-2 tracking-tight">{selectedQuiz.contestTitle}</h2>
-                     <p className="text-sky-500 font-bold uppercase tracking-widest text-[10px] leading-tight">
-                       {selectedQuiz.domain} SPECIALIZATION
-                     </p>
+                      <h3 className="text-xl font-bold text-slate-900 mb-1">
+                        {selectedResult.contestId?.contestTitle || "Assessment"}
+                      </h3>
+                      <p className="text-sm font-medium text-slate-500">Detailed result breakdown</p>
                    </div>
-                   <div className="text-right">
-                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Attempted On</p>
-                     <p className="text-sm font-black text-slate-700 dark:text-slate-300">{selectedQuiz.date}</p>
+                   <button 
+                      onClick={() => setSelectedResult(null)}
+                      className="p-2 text-slate-400 hover:bg-slate-200 rounded-lg transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                   </button>
+                </div>
+
+                <div className="p-8 overflow-y-auto space-y-8 flex-1">
+                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      {[
+                        { label: "Accuracy", val: `${Math.round((selectedResult.score / selectedResult.totalQuestions) * 100)}%` },
+                        { label: "Correct", val: selectedResult.score },
+                        { label: "Incorrect", val: selectedResult.totalQuestions - selectedResult.score },
+                        { label: "Duration", val: `${Math.floor(selectedResult.timeTaken / 60)}m ${selectedResult.timeTaken % 60}s` },
+                      ].map((stat, idx) => (
+                        <div key={idx} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-center">
+                           <p className="text-xl font-bold text-slate-900 mb-1">{stat.val}</p>
+                           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{stat.label}</p>
+                        </div>
+                      ))}
+                   </div>
+
+                   <div className="space-y-3">
+                      <h4 className="text-sm font-bold text-slate-900 mb-4">Question Breakdown</h4>
+                      {(selectedResult.answers || []).map((ans, idx) => (
+                         <div key={idx} className="p-4 rounded-xl border border-slate-100 flex items-center justify-between gap-4">
+                             <div className="flex items-start gap-4 flex-1 pr-4">
+                                <div className="w-8 h-8 shrink-0 rounded-lg bg-slate-100 flex items-center justify-center font-bold text-xs text-slate-600 mt-1">
+                                   {idx + 1}
+                                </div>
+                                <div>
+                                   <p className="text-sm font-semibold text-slate-900 mb-1">
+                                      {ans.questionId?.questionText || `Question ${idx + 1}`}
+                                   </p>
+                                   <p className="text-xs font-medium text-slate-500">
+                                      <span className="font-semibold text-slate-700">Your Answer:</span> {ans.selectedAnswer || 'Skipped'}
+                                   </p>
+                                </div>
+                             </div>
+                            {ans.isCorrect ? (
+                               <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-emerald-50 text-emerald-600">
+                                  <CheckCircle2 className="w-4 h-4" />
+                                  <span className="text-[10px] font-bold uppercase tracking-wider">Correct</span>
+                               </div>
+                            ) : (
+                               <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-red-50 text-red-600">
+                                  <XCircle className="w-4 h-4" />
+                                  <span className="text-[10px] font-bold uppercase tracking-wider">Incorrect</span>
+                               </div>
+                            )}
+                         </div>
+                      ))}
                    </div>
                 </div>
 
-                <div className="mb-10 bg-slate-50 dark:bg-slate-800/40 p-6 rounded-3xl border border-slate-100 dark:border-slate-700/50">
-                   <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                     <div className="w-1.5 h-4 bg-sky-500 rounded-full"></div>
-                     Quiz Description
-                   </h3>
-                   <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
-                     {selectedQuiz.description}
-                   </p>
+                <div className="p-6 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3">
+                   <button 
+                     onClick={() => handlePrintResult(selectedResult)}
+                     className="px-6 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-700 font-semibold text-sm hover:bg-slate-50 transition-colors flex items-center gap-2"
+                   >
+                      <Printer className="w-4 h-4" />
+                      Print
+                   </button>
+                   <button 
+                     onClick={() => setSelectedResult(null)}
+                     className="px-6 py-2.5 bg-blue-600 text-white font-semibold text-sm rounded-xl hover:bg-blue-700 transition-colors"
+                   >
+                      Close
+                   </button>
                 </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                   <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-800/50 text-center">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Score</p>
-                      <p className="text-xl font-black text-slate-800 dark:text-white">{selectedQuiz.score}/{selectedQuiz.totalQuestions}</p>
-                   </div>
-                   <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-800/50 text-center">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Accuracy</p>
-                      <p className="text-xl font-black text-emerald-500">{selectedQuiz.percentage}%</p>
-                   </div>
-                   <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-800/50 text-center">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Time spent</p>
-                      <p className="text-xl font-black text-sky-500">{selectedQuiz.timeTaken}s</p>
-                   </div>
-                   <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-800/50 text-center">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Status</p>
-                      <p className="text-xl font-black text-emerald-500">Passed</p>
-                   </div>
-                </div>
-
-                <button 
-                  onClick={() => setSelectedQuiz(null)}
-                  className="w-full mt-10 py-5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black rounded-2xl hover:scale-[1.01] active:scale-95 transition-all shadow-xl shadow-slate-200 dark:shadow-none text-sm uppercase tracking-widest"
-                >
-                  Close Achievement
-                </button>
-              </div>
-            </motion.div>
+             </motion.div>
           </div>
         )}
       </AnimatePresence>
-
     </div>
   );
 };

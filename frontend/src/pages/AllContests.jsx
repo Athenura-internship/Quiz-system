@@ -2,282 +2,249 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { apiCall } from '../utils/api';
+import { 
+  Layout, Calendar, Clock, Plus, Search, Trash2, 
+  Edit, MoreVertical, CheckCircle2, Timer, AlertCircle,
+  BarChart3, ArrowRight, Filter, Layers, Settings2, X, Trash
+} from 'lucide-react';
 
 const AllContests = () => {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [user, setUser] = useState(null);
   const [contests, setContests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterDomain, setFilterDomain] = useState("All");
 
   useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    setUser(storedUser);
     fetchContests();
   }, []);
 
   const fetchContests = async () => {
     try {
-      setLoading(true);
-      const response = await apiCall("/admin/all-contests");
-      if (response.success) {
-        setContests(response.data);
-      }
+      const data = await apiCall("/admin/all-contests");
+      if (data.success) setContests(data.data || []);
     } catch (error) {
-      console.error("Failed to fetch contests:", error);
+      console.error("Fetch Error:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const getStatus = (startTime, expiryDate) => {
-    const now = new Date();
-    const start = new Date(startTime);
-    const end = new Date(expiryDate);
-
-    if (now < start) return "Upcoming";
-    if (now >= start && now <= end) return "Ongoing";
-    return "Completed";
-  };
-
-  const filteredContests = contests.filter(contest => 
-    contest.contestTitle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    contest.domain?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const handleFinalize = async (contestId) => {
-    if (!window.confirm("Are you sure you want to finalize this contest? This will award permanent badges to the winners.")) {
-      return;
-    }
-
+  const deleteContest = async (id) => {
+    if (!window.confirm("Deleting this assessment is irreversible. Continue?")) return;
     try {
-      const data = await apiCall("/leaderboard/finalize", {
-        method: "POST",
-        body: JSON.stringify({ contestId })
-      });
-
-      if (data.success) {
-        alert("✅ Contest finalized successfully! Badges have been awarded.");
-        // Update local state to disable button immediately
-        setContests(prev => prev.map(c => 
-          c.contestId === contestId ? { ...c, awardGiven: true } : c
-        ));
-      } else {
-        alert(`❌ Error: ${data.message}`);
-      }
+      await apiCall(`/admin/delete-contest/${id}`, { method: "DELETE" });
+      setContests(prev => prev.filter(c => c._id !== id));
     } catch (error) {
-      console.error("Finalize error:", error);
-      alert(`❌ Failed to finalize contest: ${error.message}`);
+      console.error(error);
     }
   };
 
+  const getStatus = (quiz) => {
+    const now = new Date();
+    const start = new Date(quiz.startTime);
+    const expiry = new Date(quiz.expiryDate);
 
+    if (now < start) return { 
+      label: "Scheduled", 
+      color: "text-amber-600", 
+      bg: "bg-amber-50", 
+      border: "border-amber-200",
+      dot: "bg-amber-500"
+    };
+    if (now > expiry) return { 
+      label: "Archived", 
+      color: "text-slate-500", 
+      bg: "bg-slate-100", 
+      border: "border-slate-200",
+      dot: "bg-slate-400"
+    };
+    return { 
+      label: "Active", 
+      color: "text-emerald-700", 
+      bg: "bg-emerald-50", 
+      border: "border-emerald-200",
+      dot: "bg-emerald-500 animate-pulse"
+    };
+  };
 
+  const filteredContests = contests.filter(c => {
+    const title = c.contestTitle || "";
+    const domain = c.domain || "";
+    const matchesSearch = title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          domain.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesDomain = filterDomain === "All" || domain === filterDomain;
+    return matchesSearch && matchesDomain;
+  });
+
+  const domains = ["All", ...new Set(contests.map(c => c.domain))];
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
+        <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin" />
+        <p className="text-sm font-semibold text-slate-500">Loading Contests...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="w-full h-full p-4 sm:p-6 lg:p-8 font-sans overflow-x-hidden">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-7xl mx-auto bg-white dark:bg-slate-900 rounded-3xl shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-200/80 dark:border-slate-700/50 p-6 md:p-8 lg:p-10 transition-colors duration-300"
-      >
-        {/* Header Area */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
-          <div>
-            <h1 className="text-4xl font-black bg-gradient-to-r from-slate-800 to-slate-900 dark:from-white dark:to-slate-100 bg-clip-text text-transparent mb-2">
-              All Contests
-            </h1>
-            <p className="text-slate-500 dark:text-slate-400 text-lg">
-              Manage your coding challenges and quizzes
-            </p>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-            <div className="relative flex-1 md:w-64">
-              <input
-                type="text"
-                placeholder="Search contests..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border-[1.5px] border-slate-200 dark:border-slate-700 rounded-[12px] focus:border-sky-400 focus:ring-[3px] focus:ring-sky-100/50 transition-all text-sm placeholder-slate-400 dark:placeholder-slate-500 dark:text-slate-100 text-slate-800"
-              />
-              <svg className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-            
-            {user?.role === "admin" && (
-              <button
-                onClick={() => navigate('/create-contest')}
-                className="px-6 py-3 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-xl shadow-[0_4px_12px_rgba(14,165,233,0.3)] hover:shadow-[0_6px_16px_rgba(14,165,233,0.4)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shrink-0 text-sm"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-                </svg>
-                New Contest
+    <div className="max-w-7xl mx-auto pb-20 animate-fade-in">
+      {/* Header with Search and Create */}
+      <header className="mb-12 flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+            Assessments
+          </h1>
+          <p className="text-slate-500 font-medium">Manage deployment parameters, schedules, and test diagnostics.</p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+          <div className="relative group min-w-[280px]">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+            <input
+              type="text"
+              placeholder="Search assessments..."
+              className="w-full h-12 pl-11 pr-12 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all shadow-sm"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {searchTerm && (
+              <button onClick={() => setSearchTerm("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                <X size={14} />
               </button>
             )}
           </div>
+          
+          <button
+            onClick={() => navigate('/create-contest')}
+            className="h-12 px-6 bg-blue-600 text-white font-semibold text-sm rounded-xl flex items-center justify-center gap-2 hover:bg-blue-700 transition-colors shadow-sm shrink-0"
+          >
+            <Plus size={16} />
+            Create Contest
+          </button>
         </div>
+      </header>
 
-        {/* Table View */}
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-10 h-10 border-4 border-sky-200 border-t-sky-500 rounded-full animate-spin mb-4"></div>
-            <p className="text-slate-500 font-medium">Loading contests...</p>
-          </div>
-        ) : filteredContests.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center bg-slate-50 dark:bg-slate-800/20 rounded-2xl border border-slate-100 dark:border-slate-800/50">
-            <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4 shadow-sm border border-slate-200/50 dark:border-slate-700">
-              <svg className="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-            </div>
-            <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">No contests found</h3>
-            <p className="text-slate-500 dark:text-slate-400 text-sm max-w-sm">
-              We couldn't find any contests matching your search. Create a new one to get started!
-            </p>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-5">
-            {filteredContests.map((contest, index) => {
-              let statusRaw = contest.status || getStatus(contest.startTime, contest.expiryDate);
-              let status = "Upcoming";
-              if (typeof statusRaw === "string") {
-                 const s = statusRaw.toLowerCase();
-                 if (s === "completed" || s === "complete") status = "Completed";
-                 else if (s === "ongoing") status = "Ongoing";
-                 else if (s === "upcoming" || s === "scheduled" || s === "draft") status = "Upcoming";
-                 else status = statusRaw.charAt(0).toUpperCase() + statusRaw.slice(1);
-              } else if (typeof statusRaw === "boolean") {
-                 status = statusRaw ? "Completed" : "Upcoming";
-              }
-              const isCompleted = status === 'Completed';
-              
-              return (
-                <motion.div
-                  key={contest._id}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="group w-full bg-slate-50 dark:bg-slate-800/40 rounded-3xl p-6 border border-slate-200/60 dark:border-slate-700/50 hover:shadow-lg transition-all duration-300"
-                >
-                  <div className="flex flex-col xl:flex-row items-center justify-between gap-6 w-full">
-                    <div className="flex-1 w-full flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-10">
-                      <div className="w-full md:min-w-[220px]">
-                        <span className="px-3 py-1 bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 text-[10px] font-black uppercase tracking-widest rounded-full mb-3 inline-block">
-                          {contest.domain}
-                        </span>
-                        <h3 className="text-xl font-bold text-slate-800 dark:text-white group-hover:text-sky-500 transition-colors truncate">
-                          {contest.contestTitle}
-                        </h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-widest font-bold">MCQ</p>
-                      </div>
-  
-                      <div className="flex flex-wrap md:flex-nowrap items-center gap-6 xl:gap-8 w-full border-t md:border-t-0 md:border-l border-slate-200 dark:border-slate-700/50 pt-4 md:pt-0 md:pl-6 xl:pl-8">
-                         <div className="flex flex-col gap-1 w-[45%] md:w-auto">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Date & Time</p>
-                          <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{new Date(contest.date).toLocaleDateString()}</p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                            {new Date(contest.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </p>
-                        </div>
-  
-                        <div className="flex flex-col gap-1 w-[45%] md:w-auto md:border-l border-slate-200 dark:border-slate-700/50 md:pl-6 xl:pl-8">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Duration</p>
-                          <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> {contest.duration} mins</p>
-                        </div>
-  
-                        <div className="flex flex-col gap-1 w-[45%] md:w-auto md:border-l border-slate-200 dark:border-slate-700/50 md:pl-6 xl:pl-8">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</p>
-                          <div className="flex items-center gap-2">
-                            <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase inline-flex items-center gap-1
-                              ${status === 'Completed' 
-                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' 
-                                : status === 'Ongoing'
-                                ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                                : 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400'
-                              }`}>
-                              {status === 'Upcoming' && <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse"></span>}
-                              {status === 'Ongoing' && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>}
-                              {status}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
+      {/* Domain navigation pills */}
+      <div className="flex flex-wrap items-center gap-2 mb-8 border-b border-slate-200 pb-6">
+        <div className="flex items-center gap-2 mr-4 text-slate-500">
+          <Filter size={16} />
+          <span className="text-sm font-semibold">Filter Domain</span>
+        </div>
+        {domains.map(domain => (
+          <button
+            key={domain}
+            onClick={() => setFilterDomain(domain)}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all
+              ${filterDomain === domain 
+                ? "bg-blue-100 text-blue-700 border border-blue-200" 
+                : "bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100"}`}
+          >
+            {domain}
+          </button>
+        ))}
+      </div>
+
+      {/* Grid of assessments */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <AnimatePresence mode="popLayout">
+          {filteredContests.map((quiz, i) => {
+            const status = getStatus(quiz);
+            return (
+              <motion.div
+                layout
+                key={quiz._id}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ delay: i * 0.04 }}
+                className="group relative bg-white rounded-3xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col justify-between h-[300px]"
+              >
+                {/* Status bar */}
+                <div className="flex justify-between items-start mb-4">
+                  <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border ${status.border} ${status.bg}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
+                    <span className={`text-xs font-semibold ${status.color}`}>
+                      {status.label}
+                    </span>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => navigate('/create-contest', { state: { editContest: quiz } })}
+                      className="p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-slate-500 transition-colors"
+                    >
+                      <Edit size={14} />
+                    </button>
+                    <button 
+                      onClick={() => deleteContest(quiz._id)}
+                      className="p-2 bg-red-50 hover:bg-red-100 border border-red-100 rounded-lg text-red-500 transition-colors"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Body details */}
+                <div className="space-y-2 mb-4 flex-1">
+                  <div>
+                    <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{quiz.domain}</span>
+                    <h3 className="text-lg font-bold text-slate-900 line-clamp-1 leading-tight mt-2">
+                      {quiz.contestTitle}
+                    </h3>
+                  </div>
+                  <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed">
+                    {quiz.description || "No description provided for this assessment."}
+                  </p>
+                </div>
+
+                {/* Metadata footer */}
+                <div className="grid grid-cols-2 gap-4 py-4 border-t border-slate-100 mt-auto">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-slate-50 rounded-lg text-slate-400">
+                      <Calendar size={14} />
                     </div>
-  
-                    <div className="w-full xl:w-auto shrink-0 border-t xl:border-none border-slate-200 dark:border-slate-700/50 pt-5 xl:pt-0 flex flex-col items-center">
-                      {user?.role !== "admin" ? (
-                          <>
-                            {status === 'Upcoming' && (
-                              <button onClick={() => navigate('/quiz')} className="w-full xl:w-[160px] px-5 py-3.5 bg-sky-100 text-sky-700 hover:bg-sky-500 hover:text-white dark:bg-sky-900/40 dark:text-sky-400 dark:hover:bg-sky-500 font-bold rounded-xl text-sm transition-all border border-transparent hover:shadow-md">
-                                View Details
-                              </button>
-                            )}
-                            {status === 'Ongoing' && (
-                              <button onClick={() => navigate('/quiz')} className="w-full xl:w-[160px] px-5 py-3.5 bg-amber-100 text-amber-700 hover:bg-amber-500 hover:text-white dark:bg-amber-900/40 dark:text-amber-400 dark:hover:bg-amber-500 font-bold rounded-xl text-sm transition-all border border-transparent hover:shadow-md">
-                                Start Quiz
-                              </button>
-                            )}
-                            {status === 'Completed' && (
-                              <div className="flex gap-2">
-                                 <button 
-                                   onClick={() => navigate('/my-quizzes')} 
-                                   className="w-full xl:w-[140px] px-4 py-3.5 bg-emerald-100 text-emerald-700 hover:bg-emerald-500 hover:text-white dark:bg-emerald-900/40 dark:text-emerald-400 dark:hover:bg-emerald-500 font-bold rounded-xl text-xs transition-all border border-transparent hover:shadow-md"
-                                 >
-                                   My Result
-                                 </button>
-                                 <button 
-                                   onClick={() => navigate(`/quiz-leaderboard/${contest.contestId}`)} 
-                                   className="w-full xl:w-[140px] px-4 py-3.5 bg-sky-100 text-sky-700 hover:bg-sky-500 hover:text-white dark:bg-sky-900/40 dark:text-sky-400 dark:hover:bg-sky-500 font-bold rounded-xl text-xs transition-all border border-transparent hover:shadow-md"
-                                 >
-                                   Leaderboard
-                                 </button>
-                              </div>
-                            )}
-                          </>
-                        ) : (
-                          <>
-                            {status === 'Completed' ? (
-                              <div className="flex items-center gap-2">
-                                <button 
-                                  onClick={() => handleFinalize(contest.contestId)}
-                                  disabled={contest.awardGiven}
-                                  className={`px-6 py-3 font-bold rounded-xl shadow-lg active:scale-95 transition-all text-sm whitespace-nowrap
-                                    ${contest.awardGiven 
-                                      ? 'bg-slate-200 text-slate-500 cursor-not-allowed shadow-none' 
-                                      : 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20'}`}
-                                >
-                                  {contest.awardGiven ? 'Badges Awarded' : 'Award Badges'}
-                                </button>
-                                <button
-                                  onClick={() => navigate(`/admin/contest-results/${contest.contestId}`)}
-                                  className="px-6 py-3 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-xl shadow-lg shadow-sky-500/20 active:scale-95 transition-all text-sm whitespace-nowrap"
-                                >
-                                  View Result
-                                </button>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{status}</span>
-                                <button className="p-3 text-slate-400 hover:text-sky-500 transition-colors rounded-xl border border-slate-200 dark:border-slate-700 hover:border-sky-200 hover:bg-sky-50 dark:hover:bg-slate-800">
-                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                                  </svg>
-                                  </button>
-                                </div>
-                              )}
-                          </>
-                        )}
+                    <div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Date</div>
+                      <div className="text-sm text-slate-700 font-semibold">{new Date(quiz.date).toLocaleDateString()}</div>
                     </div>
                   </div>
-                </motion.div>
-              );
-            })}
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-slate-50 rounded-lg text-slate-400">
+                      <Clock size={14} />
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Duration</div>
+                      <div className="text-sm text-slate-700 font-semibold">{quiz.duration} mins</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Metrics action button */}
+                <button 
+                  onClick={() => navigate(`/admin/contest-results/${quiz._id}`)}
+                  className="w-full mt-4 h-10 bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-200 rounded-lg flex items-center justify-center gap-2 text-sm font-semibold text-slate-700 hover:text-blue-700 transition-colors"
+                >
+                  View Submissions
+                  <ArrowRight size={14} />
+                </button>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+      </div>
+
+      {/* Empty State */}
+      {filteredContests.length === 0 && (
+        <div className="py-20 text-center bg-white rounded-3xl border border-slate-200 border-dashed shadow-sm">
+          <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-400">
+            <Layers size={24} />
           </div>
-        )}
-      </motion.div>
+          <h3 className="text-slate-900 font-bold text-lg mb-1">No Assessments Found</h3>
+          <p className="text-slate-500 text-sm">Create a new assessment to get started.</p>
+        </div>
+      )}
     </div>
   );
 };

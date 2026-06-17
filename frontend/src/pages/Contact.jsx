@@ -1,191 +1,154 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-
-/* ─── reusable form field ─── */
-function Field({ label, type, placeholder, value, onChange, required }) {
-  return (
-    <div>
-      <label className="block text-[11px] font-semibold text-gray-700 mb-1 tracking-wide">
-        {label}
-        {required && <span className="text-red-400 ml-0.5">*</span>}
-      </label>
-      <input
-        type={type}
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full border border-sky-100 rounded-xl px-4 py-2.5 text-sm
-          bg-sky-50 outline-none
-          focus:border-sky-400 focus:bg-white
-          focus:shadow-[0_0_0_3px_rgba(56,189,248,0.1)]
-          transition-all"
-      />
-    </div>
-  );
-}
-
-/* ─── info row ─── */
-function InfoBlock({ label, value, sub, link }) {
-  return (
-    <div className="border-b border-sky-100 pb-5 last:border-0">
-      <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-sky-500 mb-1">
-        {label}
-      </div>
-      <div className={`text-[14px] font-semibold ${link ? "text-sky-600" : "text-gray-700"}`}>
-        {value}
-      </div>
-      <div className="text-[12px] text-gray-500 mt-0.5 leading-5 whitespace-pre-line">{sub}</div>
-    </div>
-  );
-}
+import { Globe, MapPin, Clock, Send, CheckCircle, ArrowRight, MessageSquare, Briefcase } from "lucide-react";
+import { apiCall } from "../utils/api";
 
 export default function Contact() {
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [form, setForm] = useState({
     fname: "", lname: "", email: "", org: "", interest: "", msg: "",
   });
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  const handleSubmit = () => {
-    if (!form.fname.trim() || !form.email.trim()) {
-      alert("Please fill in your name and email.");
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    if (!form.fname.trim() || !form.email.trim() || !form.msg.trim() || !form.interest) {
+      setError("Please fill out all required fields.");
       return;
     }
-    setSubmitted(true);
+    
+    setLoading(true);
+    try {
+      const payload = {
+        firstName: form.fname,
+        lastName: form.lname,
+        email: form.email,
+        inquiryType: form.interest,
+        message: form.msg
+      };
+      
+      const res = await apiCall('/contact/submit', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+
+      if (res.success) {
+        setSubmitted(true);
+      } else {
+        setError(res.message || "Failed to send message. Please try again.");
+      }
+    } catch (err) {
+      setError("A network error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <>
+    <div className="bg-slate-50 min-h-screen text-slate-900 pt-32 pb-20 font-sans">
+      
       {/* ── HERO ── */}
-      <section className="bg-gradient-to-br from-sky-50 via-[#cce8f9] to-sky-200
-        px-6 md:px-[6%] py-14 relative overflow-hidden">
-        <div className="absolute top-[-40px] right-[-40px] w-64 h-64
-          rounded-full bg-brand-300/15 blur-2xl" />
-        <div className="relative z-10 animate-fade-up anim-fill delay-1">
-          <div className="inline-block text-[11px] font-bold tracking-[0.12em] uppercase
-            bg-brand-50 text-sky-600 px-3.5 py-1.5 rounded-full mb-4">
-            Contact Us
-          </div>
-          <h1 className="font-syne font-extrabold text-[clamp(30px,5vw,52px)]
-            text-sky-900 mb-3 leading-tight">
-            Let's connect
-          </h1>
-          <p className="text-[15px] text-gray-600 max-w-[400px] leading-7">
-            Have questions about the platform? Want a demo?
-            We'd love to hear from you.
-          </p>
+      <section className="px-6 md:px-12 py-12 text-center max-w-4xl mx-auto">
+        <div className="inline-block px-4 py-1.5 rounded-full bg-blue-100 text-blue-700 text-xs font-bold tracking-widest uppercase mb-6">
+          Contact Sales
         </div>
+        <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 text-slate-900">
+          Get in Touch
+        </h1>
+        <p className="text-lg text-slate-600 font-medium max-w-2xl mx-auto">
+          Reach out to our team for a personalized demo, enterprise partnership, or technical support inquiry.
+        </p>
       </section>
 
-      {/* ── FORM + INFO ── */}
-      <section className="py-14 px-6 md:px-[6%]">
-        <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-12 items-start">
-
-          {/* ── Form card ── */}
-          <div className="bg-white border border-sky-100 rounded-3xl p-8
-            shadow-[0_8px_32px_rgba(2,132,199,0.08)] animate-fade-up anim-fill delay-1">
-            <h3 className="font-syne font-extrabold text-[17px] text-sky-900 mb-6">
-              Send us a message
-            </h3>
-
+      {/* ── MAIN CONTENT ── */}
+      <section className="px-6 md:px-12 max-w-6xl mx-auto mt-8">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-16">
+          
+          {/* ── LEFT: FORM ── */}
+          <div className="lg:col-span-3 bg-white rounded-3xl border border-slate-200 p-8 md:p-12 shadow-sm">
             {!submitted ? (
-              <div className="flex flex-col gap-4">
-                {/* Name row */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Field
-                    label="First Name" type="text" placeholder="Ayush"
-                    value={form.fname} onChange={(v) => set("fname", v)} required
-                  />
-                  <Field
-                    label="Last Name" type="text" placeholder="Kumar"
-                    value={form.lname} onChange={(v) => set("lname", v)}
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold uppercase tracking-wider text-slate-600">First Name</label>
+                    <input
+                      type="text" placeholder="Jane" required
+                      value={form.fname} onChange={(e) => set("fname", e.target.value)}
+                      className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-slate-400"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold uppercase tracking-wider text-slate-600">Last Name</label>
+                    <input
+                      type="text" placeholder="Doe"
+                      value={form.lname} onChange={(e) => set("lname", e.target.value)}
+                      className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-slate-400"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-600">Work Email</label>
+                  <input
+                    type="email" placeholder="jane@company.com" required
+                    value={form.email} onChange={(e) => set("email", e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-slate-400"
                   />
                 </div>
 
-                <Field
-                  label="Email Address" type="email" placeholder="ayush@company.com"
-                  value={form.email} onChange={(v) => set("email", v)} required
-                />
-                <Field
-                  label="Organisation" type="text" placeholder="Your company or institution"
-                  value={form.org} onChange={(v) => set("org", v)}
-                />
-
-                {/* Interest select */}
-                <div>
-                  <label className="block text-[11px] font-semibold text-gray-700 mb-1 tracking-wide">
-                    I'm interested in
-                  </label>
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-600">Inquiry Type</label>
                   <select
-                    value={form.interest}
-                    onChange={(e) => set("interest", e.target.value)}
-                    className="w-full border border-sky-100 rounded-xl px-4 py-2.5 text-sm
-                      bg-sky-50 outline-none focus:border-sky-400 focus:bg-white
-                      transition-all appearance-none cursor-pointer text-gray-700"
+                    value={form.interest} onChange={(e) => set("interest", e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
                   >
-                    <option value="">Select an option...</option>
+                    <option value="">Select Topic...</option>
                     <option>Platform Demo</option>
-                    <option>Setting up Intern Contests</option>
-                    <option>Integration &amp; API Access</option>
-                    <option>Pricing Information</option>
-                    <option>General Inquiry</option>
+                    <option>Enterprise Pricing</option>
+                    <option>Technical Support</option>
+                    <option>Partnership</option>
                   </select>
                 </div>
 
-                {/* Message */}
-                <div>
-                  <label className="block text-[11px] font-semibold text-gray-700 mb-1 tracking-wide">
-                    Message
-                  </label>
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-600">Message</label>
                   <textarea
-                    placeholder="Tell us about your intern program and what you're looking for..."
-                    rows={4}
-                    value={form.msg}
-                    onChange={(e) => set("msg", e.target.value)}
-                    className="w-full border border-sky-100 rounded-xl px-4 py-2.5 text-sm
-                      bg-sky-50 outline-none focus:border-sky-400 focus:bg-white
-                      transition-all resize-y min-h-[100px]"
+                    rows={4} placeholder="How can we help?"
+                    value={form.msg} onChange={(e) => set("msg", e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-slate-400 resize-none min-h-[120px]"
                   />
                 </div>
 
+                {error && (
+                  <div className="p-3 bg-red-50 border border-red-200 text-red-600 text-sm font-semibold rounded-xl">
+                    {error}
+                  </div>
+                )}
+
                 <button
-                  onClick={handleSubmit}
-                  className="w-full bg-gradient-to-r from-brand-700 to-sky-500 text-white
-                    py-3.5 rounded-full text-sm font-semibold
-                    shadow-[0_6px_18px_rgba(2,132,199,0.35)]
-                    hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(2,132,199,0.45)]
-                    transition-all cursor-pointer border-none mt-1"
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3.5 mt-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  Send Message
+                  {loading ? "Sending..." : "Send Message"}
+                  {!loading && <Send className="w-4 h-4" />}
                 </button>
-              </div>
+              </form>
             ) : (
-              /* Success state */
-              <div className="text-center py-10 bg-sky-50 rounded-2xl border border-sky-200">
-                <div className="w-14 h-14 rounded-full bg-green-100
-                  flex items-center justify-center mx-auto mb-4">
-                  <svg
-                    className="w-7 h-7 text-green-600"
-                    viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" strokeWidth="2.5"
-                  >
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
+              <div className="text-center py-16 flex flex-col items-center">
+                <div className="w-20 h-20 rounded-full bg-green-50 flex items-center justify-center mb-6">
+                  <CheckCircle className="w-10 h-10 text-green-600" />
                 </div>
-                <h3 className="font-syne font-bold text-base text-sky-700 mb-2">
-                  Message sent!
-                </h3>
-                <p className="text-sm text-gray-500">
-                  Thanks for reaching out. The <img src="/logo-icon.svg" alt="Athenura" className="inline-block h-3 w-auto object-contain -mt-1 mr-1" /> team will get back to you
-                  within 1–2 business days.
+                <h3 className="text-2xl font-bold mb-3 text-slate-900">Message Sent</h3>
+                <p className="text-slate-600 font-medium max-w-sm mb-8">
+                  Thanks for reaching out! Our team will get back to you within 24 business hours.
                 </p>
                 <button
-                  onClick={() => {
-                    setSubmitted(false);
-                    setForm({ fname:"", lname:"", email:"", org:"", interest:"", msg:"" });
-                  }}
-                  className="mt-5 text-xs text-brand-600 underline cursor-pointer
-                    bg-transparent border-none"
+                  onClick={() => setSubmitted(false)}
+                  className="px-6 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 transition-colors"
                 >
                   Send another message
                 </button>
@@ -193,102 +156,49 @@ export default function Contact() {
             )}
           </div>
 
-          {/* ── Info panel ── */}
-          <div className="animate-fade-up anim-fill delay-2">
-            <div className="flex flex-col gap-5 mb-6">
-              <InfoBlock
-                label="Platform"
-                value="Quiz Gaming Software"
-                sub="Domain-Based Contest Platform for Interns by <img src='/logo-icon.svg' className='inline h-3 w-auto object-contain align-middle' />"
-              />
-              <InfoBlock
-                label="Website"
-                value="www.athenura.in"
-                sub="Visit for more on our full suite of products"
-                link
-              />
-              <InfoBlock
-                label="Response Time"
-                value="Within 1–2 business days"
-                sub="Our team reviews every message personally"
-              />
-              <InfoBlock
-                label="Platform Type"
-                value="AI-Powered Quiz Contest"
-                sub={"Roles: Admin + Intern / User\nOutput: Leaderboard, Badges, Intern of Month"}
-              />
+          {/* ── RIGHT: INFO ── */}
+          <div className="lg:col-span-2 space-y-10 lg:pl-8">
+            <div>
+              <h3 className="text-xl font-bold mb-6 text-slate-900">Global Offices</h3>
+              <div className="space-y-8">
+                <div className="flex gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+                    <Globe className="text-blue-600 w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-900">Headquarters</p>
+                    <p className="text-slate-600">Sector 62, Noida</p>
+                    <p className="text-sm text-slate-500 mt-1"> Uttar Pradesh</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+                    <Clock className="text-blue-600 w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-900">Business Hours</p>
+                    <p className="text-slate-600">09:00 - 18:00 IST</p>
+                    <p className="text-sm text-slate-500 mt-1">Monday - Friday</p>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Highlight card */}
-            <div className="bg-gradient-to-br from-brand-700 to-brand-900
-              rounded-2xl p-6 text-white">
-              <h3 className="font-syne font-bold text-[15px] mb-2.5">New to Athenura?</h3>
-              <p className="text-[13px] text-brand-200 leading-relaxed mb-4">
-                Our platform runs contests across up to 12 domains simultaneously.
-                Every intern gets questions from their own field, scored fairly, instantly.
+            <div className="bg-slate-100 p-8 rounded-2xl border border-slate-200">
+              <MessageSquare className="w-8 h-8 text-blue-600 mb-4" />
+              <h4 className="text-lg font-bold text-slate-900 mb-2">Direct Email</h4>
+              <p className="text-slate-600 mb-4 text-sm">
+                Prefer to email us directly? Reach our sales team at:
               </p>
-              <Link
-                to="/about"
-                className="inline-block bg-white/15 text-white border border-white/30
-                  px-5 py-2 rounded-full text-xs hover:bg-white/25 transition-all"
-              >
-                Learn More →
-              </Link>
+              <a href="mailto:hr.athenura@gmail.com" className="text-blue-600 font-bold hover:underline">
+                hr.athenura@gmail.com
+              </a>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── CONTACT INFO CARDS ── */}
-      <section className="pb-14 px-6 md:px-[6%]">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[
-            {
-              icon: "M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z",
-              title: "Email Us",
-              sub: "Reach out anytime",
-              val: "hello@athenura.in",
-            },
-            {
-              icon: "M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z",
-              title: "Location",
-              sub: "Head office",
-              val: "India",
-            },
-            {
-              icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",
-              title: "Working Hours",
-              sub: "Support available",
-              val: "Mon – Fri, 9am – 6pm IST",
-            },
-          ].map(({ icon, title, sub, val }) => (
-            <div
-              key={title}
-              className="bg-sky-50 border border-sky-100 rounded-2xl p-5
-                flex items-start gap-4
-                hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(2,132,199,0.1)]
-                transition-all"
-            >
-              <div className="w-10 h-10 rounded-xl bg-brand-700
-                flex items-center justify-center flex-shrink-0">
-                <svg
-                  className="w-5 h-5"
-                  viewBox="0 0 24 24" fill="none"
-                  stroke="white" strokeWidth="2"
-                  strokeLinecap="round" strokeLinejoin="round"
-                >
-                  <path d={icon} />
-                </svg>
-              </div>
-              <div>
-                <div className="font-syne font-bold text-[13px] text-sky-900">{title}</div>
-                <div className="text-[11px] text-gray-500 mb-0.5">{sub}</div>
-                <div className="text-[13px] font-medium text-gray-700">{val}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-    </>
+    </div>
   );
 }
